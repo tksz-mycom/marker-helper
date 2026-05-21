@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marker HELP</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="mm-head">
+      <span class="mm-logo" aria-hidden="true"></span>
+      <h1>Marker HELP</h1>
+      <button type="button" id="mm-open-panel" class="mm-head-btn" title="一覧パネルを開く" aria-label="一覧パネルを開く">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <line x1="15" y1="4" x2="15" y2="20" />
+        </svg>
+        <span id="mm-count" class="mm-count-badge" hidden>0</span>
+      </button>
+    </header>
+
+    <!-- 対応していないページ用の注意書き -->
+    <p id="mm-unsupported" class="mm-unsupported" hidden>
+      このページでは利用できません。<br />通常のWebページ（http / https）で開いてください。
+    </p>
+
+    <main id="mm-main">
+      <!-- マークモード -->
+      <label class="mm-toggle">
+        <span class="mm-toggle-text">
+          <strong>マークモード</strong>
+          <small>ホバーで強調・クリックで固定</small>
+        </span>
+        <input type="checkbox" id="mm-enabled" />
+        <span class="mm-switch" aria-hidden="true"></span>
+      </label>
+
+      <!-- 色 -->
+      <section class="mm-field">
+        <h2>枠の色</h2>
+        <div class="mm-swatches" id="mm-swatches" role="radiogroup" aria-label="枠の色"></div>
+        <label class="mm-custom-color">
+          <span>カスタム</span>
+          <input type="color" id="mm-color" value="#ff3b30" />
+        </label>
+      </section>
+
+      <!-- 線種 -->
+      <section class="mm-field">
+        <h2>線種</h2>
+        <div class="mm-segmented" id="mm-line" role="radiogroup" aria-label="線種">
+          <button type="button" data-value="solid" class="is-active">実線</button>
+          <button type="button" data-value="dashed">破線</button>
+          <button type="button" data-value="dotted">点線</button>
+        </div>
+      </section>
+
+      <!-- 線幅 -->
+      <section class="mm-field">
+        <h2>線幅</h2>
+        <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅">
+          <button type="button" data-value="2">細</button>
+          <button type="button" data-value="3" class="is-active">中</button>
+          <button type="button" data-value="5">太</button>
+        </div>
+      </section>
+
+      <!-- 余白（4pxの倍数） -->
+      <section class="mm-field">
+        <h2>余白</h2>
+        <div class="mm-slider-row">
+          <input type="range" id="mm-padding" class="mm-range" min="0" max="40" step="1" value="8" aria-label="余白" />
+          <input type="number" id="mm-padding-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="余白(px)" />
+          <span class="mm-unit">px</span>
+        </div>
+      </section>
+
+      <!-- 角丸（4pxの倍数） -->
+      <section class="mm-field">
+        <h2>角丸</h2>
+        <div class="mm-slider-row">
+          <input type="range" id="mm-radius" class="mm-range" min="0" max="40" step="1" value="8" aria-label="角丸" />
+          <input type="number" id="mm-radius-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="角丸(px)" />
+          <span class="mm-unit">px</span>
+        </div>
+      </section>
+
+      <!-- 表示オプション -->
+      <section class="mm-field">
+        <h2>表示</h2>
+        <label class="mm-inline-toggle">
+          <span class="mm-inline-text">
+            連番ラベル
+            <small>枠に番号バッジを表示</small>
+          </span>
+          <input type="checkbox" id="mm-labels" />
+          <span class="mm-switch" aria-hidden="true"></span>
+        </label>
+      </section>
+
+      <!-- プレビュー -->
+      <div class="mm-preview" aria-hidden="true">
+        <span id="mm-preview-box">
+          <span id="mm-preview-badge" class="mm-preview-badge">1</span>
+          プレビュー
+        </span>
+      </div>
+
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

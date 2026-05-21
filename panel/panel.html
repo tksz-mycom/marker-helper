@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Marker HELP — 一覧</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <header class="mm-bar">
+      <div class="mm-bar-title">
+        <span class="mm-logo" aria-hidden="true"></span>
+        <h1>マーク一覧</h1>
+        <span id="mm-count" class="mm-pill">0</span>
+      </div>
+      <div class="mm-bar-actions">
+        <button type="button" id="mm-copy-all" class="mm-icon-btn" title="全セレクタをコピー">
+          まとめてコピー
+        </button>
+        <button type="button" id="mm-clear-all" class="mm-icon-btn mm-danger" title="すべてクリア">
+          すべてクリア
+        </button>
+      </div>
+    </header>
+
+    <p id="mm-empty" class="mm-empty">
+      <span class="mm-empty-mark" aria-hidden="true"></span>
+      まだマークがありません。<br />
+      ポップアップで<strong>マークモード</strong>をオンにして、<br />
+      ページ上の要素をクリックしてください。
+    </p>
+
+    <ul id="mm-list" class="mm-list"></ul>
+
+    <!-- 1件分のテンプレート -->
+    <template id="mm-item-tpl">
+      <li class="mm-item">
+        <span class="mm-badge"></span>
+        <div class="mm-item-body">
+          <div class="mm-item-head">
+            <span class="mm-tag"></span>
+            <span class="mm-detached" hidden>消失</span>
+          </div>
+          <code class="mm-selector"></code>
+          <span class="mm-text"></span>
+          <div class="mm-item-actions">
+            <button type="button" class="mm-act mm-act-copy">コピー</button>
+            <button type="button" class="mm-act mm-act-locate">位置へ</button>
+            <button type="button" class="mm-act mm-act-delete">削除</button>
+          </div>
+        </div>
+      </li>
+    </template>
+
+    <div id="mm-toast" class="mm-toast" role="status" aria-live="polite" hidden></div>
+
+    <script src="panel.js"></script>
+  </body>
+</html>

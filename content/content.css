@@ -1,0 +1,89 @@
+/* Marker HELP — content script が注入する要素のスタイル */
+
+#mm-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647; /* 最前面 */
+  pointer-events: none; /* 下のページ操作を妨げない */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  contain: layout style size;
+}
+
+#mm-overlay-root * {
+  box-sizing: border-box;
+}
+
+/* オーバーレイ内の枠は左上原点に置き、transform で配置する */
+.mm-hover-box,
+.mm-mark-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 2px;
+  will-change: transform;
+}
+
+/* ホバー時の追従枠 */
+.mm-hover-box {
+  border: 2px dashed #ff3b30;
+  background: rgba(255, 59, 48, 0.08);
+  transition: border-color 80ms linear;
+}
+
+/* 固定されたマーク枠（色・線種・線幅は JS からインラインで指定） */
+.mm-mark-box {
+  border-style: solid;
+  border-color: #ff3b30;
+  border-width: 3px;
+}
+
+/* 位置へ移動したときの点滅 */
+.mm-mark-box.mm-flash {
+  animation: mm-flash 0.9s ease-out 1;
+}
+
+@keyframes mm-flash {
+  0% {
+    background: rgba(255, 255, 255, 0);
+  }
+  20% {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0);
+  }
+}
+
+/* 番号バッジ（枠の左上に重ねる） */
+.mm-mark-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #ff3b30;
+  color: #fff;
+  font: 700 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  will-change: transform;
+  transform-origin: top left;
+}
+
+/* マークモード中はカーソルを十字に */
+html.mm-marking,
+html.mm-marking * {
+  cursor: crosshair !important;
+}
