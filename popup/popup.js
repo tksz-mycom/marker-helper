@@ -20,9 +20,10 @@ const els = {
   swatches: document.getElementById("mm-swatches"),
   mypalette: document.getElementById("mm-mypalette"),
   addColor: document.getElementById("mm-add-color"),
-  color: document.getElementById("mm-color"),
   line: document.getElementById("mm-line"),
   width: document.getElementById("mm-width"),
+  widthRange: document.getElementById("mm-width-range"),
+  widthNum: document.getElementById("mm-width-num"),
   padding: document.getElementById("mm-padding"),
   paddingNum: document.getElementById("mm-padding-num"),
   radius: document.getElementById("mm-radius"),
@@ -35,20 +36,28 @@ const els = {
 };
 
 let activeTabId = null;
-let style = { color: "#ff3b30", lineStyle: "solid", width: 3, padding: 8, radius: 8 };
+let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 };
 let showLabel = false;
 
-// マイカラー（ユーザーが登録するカスタムパレット）。最大6色まで。
+// マイカラー（ユーザーが登録するカスタムパレット）。最大18色まで（9列×2行）。
 // content には関与させず popup 専用の UI 設定として chrome.storage.local に保存する。
-const MAX_CUSTOM_COLORS = 6;
+const MAX_CUSTOM_COLORS = 18;
 const CUSTOM_COLORS_KEY = "mm:customColors";
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 let customColors = [];
+// 隠しカラーピッカーの用途を区別する。-1 = 新規追加、0以上 = そのインデックスの色を変更
+let editingIndex = -1;
 
 // マーカーの余白・角丸は 0〜40px（1px刻み）
 const MAX_SPACING = 40;
 const clampSpacing = (n) =>
   Math.min(MAX_SPACING, Math.max(0, Math.round(Number(n) || 0)));
+
+// 線幅は 1〜20px（1px刻み）。細/中/太のプリセットと共通の値域
+const MIN_WIDTH = 1;
+const MAX_WIDTH = 20;
+const clampWidth = (n) =>
+  Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(Number(n) || MIN_WIDTH)));
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
 
@@ -98,7 +107,6 @@ function reflectColor() {
   for (const slot of els.mypalette.querySelectorAll(".mm-myslot[data-color]")) {
     slot.classList.toggle("is-selected", slot.dataset.color.toLowerCase() === style.color.toLowerCase());
   }
-  els.color.value = HEX_RE.test(style.color) ? style.color : "#ff3b30";
   updatePreview();
 }
 
@@ -133,51 +141,108 @@ function saveCustomColors() {
 function buildMyPalette() {
   els.mypalette.textContent = "";
 
-  customColors.forEach((color, i) => {
-    const wrap = document.createElement("div");
-    wrap.className = "mm-myslot-wrap";
-
-    const slot = document.createElement("button");
-    slot.type = "button";
-    slot.className = "mm-myslot";
-    slot.style.background = color;
-    slot.dataset.color = color;
-    slot.setAttribute("aria-label", `マイカラー ${color}`);
-    slot.addEventListener("click", () => setColor(color));
-
-    const del = document.createElement("button");
-    del.type = "button";
-    del.className = "mm-myslot-del";
-    del.textContent = "×";
-    del.setAttribute("aria-label", `${color} を削除`);
-    del.addEventListener("click", (e) => {
-      e.stopPropagation();
-      removeCustomColor(i);
-    });
-
-    wrap.appendChild(slot);
-    wrap.appendChild(del);
-    els.mypalette.appendChild(wrap);
-  });
-
-  // 空き枠が残っていれば「＋」を1つ表示する
-  if (customColors.length < MAX_CUSTOM_COLORS) {
-    const add = document.createElement("button");
-    add.type = "button";
-    add.className = "mm-myslot-add";
-    add.textContent = "＋";
-    add.setAttribute("aria-label", "色を選んでマイカラーに追加");
-    add.addEventListener("click", openAddColor);
-    els.mypalette.appendChild(add);
+  // 9列×2行（MAX_CUSTOM_COLORS マス）の固定グリッドを常に描画する。
+  // 登録済み=色見本、先頭の空き枠=「＋」（追加）、残り=空きプレースホルダ。
+  for (let i = 0; i < MAX_CUSTOM_COLORS; i++) {
+    if (i < customColors.length) {
+      els.mypalette.appendChild(createColorSlot(customColors[i], i));
+    } else if (i === customColors.length) {
+      els.mypalette.appendChild(createAddSlot());
+    } else {
+      els.mypalette.appendChild(createEmptySlot());
+    }
   }
 
   reflectColor();
 }
 
-// 「＋」: 現在の色を初期値に隠しカラーピッカーを開く
+function createColorSlot(color, index) {
+  // 「枠の色」スウォッチと同一構造: グリッドセル直下の単一要素に aspect-ratio:1 を当てる
+  const slot = document.createElement("button");
+  slot.type = "button";
+  slot.className = "mm-myslot";
+  slot.style.background = color;
+  slot.dataset.color = color;
+  slot.title = "クリックで選択／ダブルクリックで色を変更";
+  slot.setAttribute("aria-label", `マイカラー ${color}（ダブルクリックで色変更）`);
+  slot.addEventListener("click", () => setColor(color));
+  // ダブルクリックで既存スロットの色を後から変更できる
+  slot.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    openEditColor(index);
+  });
+
+  // 削除ボタンはマス内に重ねて配置（button のネストを避けるため span を使う）
+  const del = document.createElement("span");
+  del.className = "mm-myslot-del";
+  del.textContent = "×";
+  del.setAttribute("role", "button");
+  del.setAttribute("aria-label", `${color} を削除`);
+  del.addEventListener("click", (e) => {
+    e.stopPropagation();
+    removeCustomColor(index);
+  });
+
+  slot.appendChild(del);
+  return slot;
+}
+
+function createAddSlot() {
+  const add = document.createElement("button");
+  add.type = "button";
+  add.className = "mm-myslot-add";
+  add.textContent = "＋";
+  add.setAttribute("aria-label", "色を選んでマイカラーに追加");
+  add.addEventListener("click", openAddColor);
+  return add;
+}
+
+function createEmptySlot() {
+  const empty = document.createElement("div");
+  empty.className = "mm-myslot-empty";
+  empty.setAttribute("aria-hidden", "true");
+  return empty;
+}
+
+// 「＋」: 現在の色を初期値に隠しカラーピッカーを開く（新規追加）
 function openAddColor() {
+  editingIndex = -1;
   els.addColor.value = HEX_RE.test(style.color) ? style.color : "#ff3b30";
   els.addColor.click();
+}
+
+// 既存スロット: その色を初期値に隠しカラーピッカーを開く（色変更）
+function openEditColor(index) {
+  if (index < 0 || index >= customColors.length) return;
+  editingIndex = index;
+  els.addColor.value = HEX_RE.test(customColors[index]) ? customColors[index] : "#ff3b30";
+  els.addColor.click();
+}
+
+// 隠しピッカーで色を確定したときの分岐（新規追加 or 既存スロットの変更）
+function onPickerChange() {
+  const color = els.addColor.value;
+  if (editingIndex >= 0) {
+    updateCustomColor(editingIndex, color);
+  } else {
+    addCustomColor(color);
+  }
+  editingIndex = -1;
+}
+
+function updateCustomColor(index, color) {
+  if (!HEX_RE.test(color)) return;
+  if (index < 0 || index >= customColors.length) return;
+  // 他スロットと重複する色なら登録は変えず選択だけにする
+  const dup = customColors.some((c, i) => i !== index && c.toLowerCase() === color.toLowerCase());
+  if (dup) {
+    setColor(color);
+    return;
+  }
+  customColors = customColors.map((c, i) => (i === index ? color : c));
+  saveCustomColors();
+  buildMyPalette();
+  setColor(color); // 変更後の色を即適用
 }
 
 function addCustomColor(color) {
@@ -238,8 +303,11 @@ function setLineStyle(value) {
 }
 
 function setWidth(value) {
-  style = { ...style, width: Number(value) };
-  reflectSegmented(els.width, value);
+  const v = clampWidth(value);
+  style = { ...style, width: v };
+  // セグメント（細/中/太）とスライダー・数値入力を相互に同期
+  reflectSegmented(els.width, v);
+  reflectSlider(els.widthRange, els.widthNum, v);
   updatePreview();
   pushStyle();
 }
@@ -284,10 +352,8 @@ function wireEvents() {
     sendToTab({ type: "MM_SET_ENABLED", enabled: els.enabled.checked });
   });
 
-  els.color.addEventListener("input", () => setColor(els.color.value));
-
-  // マイカラー登録用の隠しピッカーで色を確定したら追加
-  els.addColor.addEventListener("change", () => addCustomColor(els.addColor.value));
+  // 隠しピッカーで色を確定したら、新規追加または既存スロットの色変更を行う
+  els.addColor.addEventListener("change", onPickerChange);
 
   els.line.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-value]");
@@ -298,6 +364,10 @@ function wireEvents() {
     const btn = e.target.closest("button[data-value]");
     if (btn) setWidth(btn.dataset.value);
   });
+
+  // 線幅: スライダーは即時、数値入力は確定時に反映（px直接指定）
+  els.widthRange.addEventListener("input", () => setWidth(els.widthRange.value));
+  els.widthNum.addEventListener("change", () => setWidth(els.widthNum.value));
 
   // 余白: スライダーは即時、数値入力は確定時に反映（どちらも4pxにスナップ）
   els.padding.addEventListener("input", () => setPadding(els.padding.value));
@@ -354,6 +424,7 @@ async function init() {
   reflectColor();
   reflectSegmented(els.line, style.lineStyle);
   reflectSegmented(els.width, style.width);
+  reflectSlider(els.widthRange, els.widthNum, clampWidth(style.width));
   reflectSlider(els.padding, els.paddingNum, clampSpacing(style.padding));
   reflectSlider(els.radius, els.radiusNum, clampSpacing(style.radius));
   setCount(state.marks?.length ?? 0);

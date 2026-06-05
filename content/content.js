@@ -14,7 +14,7 @@
   const state = {
     enabled: false,
     /** 新規マークに適用する現在のスタイル。padding は縁と枠線のすき間、radius は角丸(px) */
-    style: { color: "#ff3b30", lineStyle: "solid", width: 3, padding: 8, radius: 8 },
+    style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 },
     /** 番号ラベル（連番バッジ）を表示するか（既定OFF） */
     showLabel: false,
     /** @type {Mark[]} */

@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **設定（スタイル・ラベル表示）は永続化する**。マーク状態とは別扱いで、`style`（色・線種・線幅・余白・角丸）と `showLabel` は `chrome.storage.local`（キー `mm:settings`）に保存する。content は注入時に `restoreSettings` で復元し、`MM_SET_STYLE` / `MM_SET_LABELS` 受信時に `persistSettings` で保存する。popup は既存の `MM_GET_STATE` 経由で復元済みの値を反映するため、永続化ロジックを持たない。`manifest.json` の `storage` 権限が必要。
 
-**マイカラー（カスタムパレット）も永続化する**。ユーザーが「枠の色」の「マイカラー」で登録した色（最大6・HEX形式検証あり）は `chrome.storage.local`（キー `mm:customColors`）に保存する。これは **popup 専用のUI設定** であり content には関与させない（popup が `loadCustomColors` / `saveCustomColors` で直接読み書きし、空き枠の「＋」で現在色を追加、スロットのホバーで出る「×」で削除する）。
+**マイカラー（カスタムパレット）も永続化する**。ユーザーが「枠の色」の「マイカラー」で登録した色（最大18・9列×2行・HEX形式検証あり）は `chrome.storage.local`（キー `mm:customColors`）に保存する。これは **popup 専用のUI設定** であり content には関与させない（popup が `loadCustomColors` / `saveCustomColors` で直接読み書きし、空き枠の「＋」で現在色を追加、登録済みスロットの **ダブルクリックで色を変更**、ホバーで出る「×」で削除する）。追加・変更には共用の隠しカラーピッカー（`#mm-add-color`）を使い、`editingIndex`（-1=追加／0以上=変更）で用途を分岐する。任意色用の「カスタム」ピッカーはマイカラーに統合したため廃止した。
 
 | コンテキスト | ファイル | 役割 |
 |---|---|---|

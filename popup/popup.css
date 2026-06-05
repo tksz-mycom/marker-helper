@@ -8,6 +8,8 @@
   --accent-weak: #ff3b3018;
   --radius: 10px;
   --shadow: 0 1px 2px rgba(20, 14, 10, 0.06), 0 8px 24px rgba(20, 14, 10, 0.08);
+  /* プレビュー／マイカラー未登録枠で共用する斜線（ハッチ）背景 */
+  --hatch: repeating-linear-gradient(45deg, #f1ece8 0 8px, #f7f3f0 8px 16px);
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans",
     "Noto Sans JP", system-ui, sans-serif;
 
@@ -183,7 +185,8 @@ body {
   transform: scale(1.12);
 }
 .mm-swatch[aria-checked="true"] {
-  border-color: var(--text);
+  border-color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px var(--accent);
   transform: scale(1.08);
 }
 .mm-swatch:focus-visible {
@@ -200,17 +203,13 @@ body {
 }
 .mm-mypalette {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(9, 1fr);
   gap: 6px;
   margin-bottom: 10px;
 }
-.mm-myslot-wrap {
+.mm-myslot {
   position: relative;
   aspect-ratio: 1;
-}
-.mm-myslot {
-  width: 100%;
-  height: 100%;
   border-radius: 7px;
   border: 2px solid transparent;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
@@ -222,7 +221,8 @@ body {
   transform: scale(1.12);
 }
 .mm-myslot.is-selected {
-  border-color: var(--text);
+  border-color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px var(--accent);
   transform: scale(1.08);
 }
 .mm-myslot:focus-visible {
@@ -249,7 +249,7 @@ body {
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
-.mm-myslot-wrap:hover .mm-myslot-del,
+.mm-myslot:hover .mm-myslot-del,
 .mm-myslot-del:focus-visible {
   display: flex;
 }
@@ -258,7 +258,7 @@ body {
   aspect-ratio: 1;
   border-radius: 7px;
   border: 1.5px dashed var(--line);
-  background: transparent;
+  background: var(--hatch);
   color: var(--muted);
   font-size: 16px;
   line-height: 1;
@@ -266,6 +266,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   transition: border-color 120ms ease, color 120ms ease;
 }
 .mm-myslot-add:hover {
@@ -275,6 +276,13 @@ body {
 .mm-myslot-add:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+/* 空きプレースホルダ: 9列×3行のグリッド形状を保つための非操作枠 */
+.mm-myslot-empty {
+  aspect-ratio: 1;
+  border-radius: 7px;
+  border: 1.5px dashed var(--line);
+  background: var(--hatch);
 }
 
 /* 画面外に隠す（登録用の隠しカラーピッカー） */
@@ -288,24 +296,6 @@ body {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   overflow: hidden;
-}
-
-.mm-custom-color {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
-.mm-custom-color input[type="color"] {
-  width: 44px;
-  height: 26px;
-  padding: 0;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface);
-  cursor: pointer;
 }
 
 /* セグメント切替 */
@@ -373,7 +363,12 @@ body {
   pointer-events: none;
 }
 
-/* スライダー行（余白・角丸） */
+/* セグメントの直後にスライダー行が続く場合（線幅）は間隔を空ける */
+.mm-segmented + .mm-slider-row {
+  margin-top: var(--space-2);
+}
+
+/* スライダー行（線幅・余白・角丸） */
 .mm-slider-row {
   display: flex;
   align-items: center;
@@ -445,11 +440,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: repeating-linear-gradient(
-      45deg,
-      #f1ece8 0 8px,
-      #f7f3f0 8px 16px
-    );
+  background: var(--hatch);
   border-radius: var(--radius);
 }
 #mm-preview-box {

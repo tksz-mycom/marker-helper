@@ -43,12 +43,29 @@
         <h3 class="mm-subhead">枠の色（マイカラー）</h3>
         <div class="mm-mypalette" id="mm-mypalette" aria-label="マイカラー（自分で登録した色）"></div>
 
-        <label class="mm-custom-color">
-          <span>カスタム</span>
-          <input type="color" id="mm-color" value="#ff3b30" />
-        </label>
-        <!-- マイカラー登録用の隠しカラーピッカー（「＋」スロットから起動） -->
+        <!-- マイカラーの新規追加・色変更に使う隠しカラーピッカー -->
         <input type="color" id="mm-add-color" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" value="#ff3b30" />
+      </section>
+
+      <!-- プレビュー -->
+      <div class="mm-preview" aria-hidden="true">
+        <span id="mm-preview-box">
+          <span id="mm-preview-badge" class="mm-preview-badge">1</span>
+          プレビュー
+        </span>
+      </div>
+
+      <!-- 表示オプション -->
+      <section class="mm-field">
+        <h2>表示</h2>
+        <label class="mm-inline-toggle">
+          <span class="mm-inline-text">
+            連番ラベル
+            <small>枠に番号バッジを表示</small>
+          </span>
+          <input type="checkbox" id="mm-labels" />
+          <span class="mm-switch" aria-hidden="true"></span>
+        </label>
       </section>
 
       <!-- 線種 -->
@@ -66,8 +83,13 @@
         <h2>線幅</h2>
         <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅">
           <button type="button" data-value="2">細</button>
-          <button type="button" data-value="3" class="is-active">中</button>
-          <button type="button" data-value="5">太</button>
+          <button type="button" data-value="4" class="is-active">中</button>
+          <button type="button" data-value="6">太</button>
+        </div>
+        <div class="mm-slider-row">
+          <input type="range" id="mm-width-range" class="mm-range" min="1" max="20" step="1" value="4" aria-label="線幅" />
+          <input type="number" id="mm-width-num" class="mm-num" min="1" max="20" step="1" value="4" aria-label="線幅(px)" />
+          <span class="mm-unit">px</span>
         </div>
       </section>
 
@@ -90,27 +112,6 @@
           <span class="mm-unit">px</span>
         </div>
       </section>
-
-      <!-- 表示オプション -->
-      <section class="mm-field">
-        <h2>表示</h2>
-        <label class="mm-inline-toggle">
-          <span class="mm-inline-text">
-            連番ラベル
-            <small>枠に番号バッジを表示</small>
-          </span>
-          <input type="checkbox" id="mm-labels" />
-          <span class="mm-switch" aria-hidden="true"></span>
-        </label>
-      </section>
-
-      <!-- プレビュー -->
-      <div class="mm-preview" aria-hidden="true">
-        <span id="mm-preview-box">
-          <span id="mm-preview-badge" class="mm-preview-badge">1</span>
-          プレビュー
-        </span>
-      </div>
 
     </main>
 
