@@ -58,14 +58,22 @@
       <!-- 表示オプション -->
       <section class="mm-field">
         <h2>表示</h2>
-        <label class="mm-inline-toggle">
-          <span class="mm-inline-text">
-            連番ラベル
-            <small>枠に番号バッジを表示</small>
-          </span>
-          <input type="checkbox" id="mm-labels" />
-          <span class="mm-switch" aria-hidden="true"></span>
-        </label>
+        <div class="mm-label-card">
+          <label class="mm-inline-toggle">
+            <span class="mm-inline-text">
+              連番ラベル
+              <small>枠に番号バッジを表示</small>
+            </span>
+            <input type="checkbox" id="mm-labels" />
+            <span class="mm-switch" aria-hidden="true"></span>
+          </label>
+          <div class="mm-segmented mm-label-pos" id="mm-label-pos" role="radiogroup" aria-label="ラベル位置">
+            <button type="button" data-value="tl" class="is-active">左上</button>
+            <button type="button" data-value="tr">右上</button>
+            <button type="button" data-value="bl">左下</button>
+            <button type="button" data-value="br">右下</button>
+          </div>
+        </div>
       </section>
 
       <!-- 線種 -->

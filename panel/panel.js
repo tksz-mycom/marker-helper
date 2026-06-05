@@ -73,6 +73,9 @@ async function copyText(text) {
 
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
+  // ドラッグで連番（並び順）を入れ替えられるようにする
+  node.draggable = true;
+  node.dataset.id = String(mark.id);
   const badge = node.querySelector(".mm-badge");
   const tag = node.querySelector(".mm-tag");
   const detached = node.querySelector(".mm-detached");
@@ -132,6 +135,69 @@ function render(marks) {
   for (const mark of currentMarks) frag.appendChild(buildItem(mark));
   listEl.appendChild(frag);
 }
+
+// ---- ドラッグ並べ替え -------------------------------------------------
+
+// ドラッグ中要素を、ポインタのY座標から見て「次に来る」項目を返す（無ければ末尾）
+function getDragAfterElement(y) {
+  const items = [...listEl.querySelectorAll(".mm-item:not(.mm-dragging)")];
+  let closest = { offset: Number.NEGATIVE_INFINITY, element: null };
+  for (const child of items) {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) {
+      closest = { offset, element: child };
+    }
+  }
+  return closest.element;
+}
+
+// DOMの並び順からバッジ番号を即時更新（送信→broadcast到着までのちらつき低減）
+function relabelDom() {
+  listEl.querySelectorAll(".mm-item .mm-badge").forEach((b, i) => {
+    b.textContent = String(i + 1);
+  });
+}
+
+// 現在のDOM順を content へ通知して連番を確定する
+function commitOrder() {
+  const ids = [...listEl.querySelectorAll(".mm-item")].map((li) => Number(li.dataset.id));
+  relabelDom();
+  sendToTab({ type: "MM_REORDER_MARKS", ids });
+}
+
+listEl.addEventListener("dragstart", (e) => {
+  const li = e.target.closest(".mm-item");
+  if (!li) return;
+  li.classList.add("mm-dragging");
+  e.dataTransfer.effectAllowed = "move";
+  try {
+    e.dataTransfer.setData("text/plain", li.dataset.id);
+  } catch {
+    /* 一部環境では setData が失敗するが並べ替え自体には不要 */
+  }
+});
+
+listEl.addEventListener("dragover", (e) => {
+  const dragging = listEl.querySelector(".mm-dragging");
+  if (!dragging) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  const after = getDragAfterElement(e.clientY);
+  if (after == null) listEl.appendChild(dragging);
+  else listEl.insertBefore(dragging, after);
+});
+
+listEl.addEventListener("drop", (e) => {
+  if (listEl.querySelector(".mm-dragging")) e.preventDefault();
+});
+
+listEl.addEventListener("dragend", () => {
+  const dragging = listEl.querySelector(".mm-dragging");
+  if (!dragging) return;
+  dragging.classList.remove("mm-dragging");
+  commitOrder();
+});
 
 let reloading = false;
 let reloadQueued = false;

@@ -333,6 +333,30 @@ body {
   outline-offset: 1px;
 }
 
+/* 連番ラベルのカード（トグルと位置セグメントを1枚にまとめる） */
+.mm-label-card {
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+/* カード内のトグルはカード自体が枠になるため、行の枠を外す */
+.mm-label-card .mm-inline-toggle {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+/* 連番ラベルの表示位置セグメント（ラベルOFF時は無効化） */
+.mm-label-pos {
+  margin-top: 10px;
+}
+.mm-label-pos.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* インライントグル（表示オプション） */
 .mm-inline-toggle {
   display: flex;
@@ -468,6 +492,23 @@ body {
   font-size: 11px;
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+/* ラベル位置に応じてプレビューのバッジも四隅へ */
+#mm-preview-box.pos-tr .mm-preview-badge {
+  top: -11px;
+  left: auto;
+  right: -11px;
+}
+#mm-preview-box.pos-bl .mm-preview-badge {
+  top: auto;
+  bottom: -11px;
+  left: -11px;
+}
+#mm-preview-box.pos-br .mm-preview-badge {
+  top: auto;
+  left: auto;
+  bottom: -11px;
+  right: -11px;
 }
 .mm-preview-badge[hidden] {
   display: none;

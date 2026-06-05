@@ -17,6 +17,8 @@
     style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 },
     /** 番号ラベル（連番バッジ）を表示するか（既定OFF） */
     showLabel: false,
+    /** 番号バッジの表示位置: "tl" | "tr" | "bl" | "br"（既定は左上） */
+    labelPos: "tl",
     /** @type {Mark[]} */
     marks: [],
     counter: 0,
@@ -32,7 +34,11 @@
   function persistSettings() {
     try {
       chrome.storage.local.set({
-        [SETTINGS_KEY]: { style: state.style, showLabel: state.showLabel },
+        [SETTINGS_KEY]: {
+          style: state.style,
+          showLabel: state.showLabel,
+          labelPos: state.labelPos,
+        },
       });
     } catch {
       /* storage 権限が無い等は無視 */
@@ -56,6 +62,9 @@
         }
         if (typeof saved.showLabel === "boolean") {
           state.showLabel = saved.showLabel;
+        }
+        if (["tl", "tr", "bl", "br"].includes(saved.labelPos)) {
+          state.labelPos = saved.labelPos;
         }
         // 既にホバー枠やマークが描画されていれば見た目へ反映
         syncPositions();
@@ -106,12 +115,18 @@
     };
   }
 
+  // バッジを重ねる枠の角座標を labelPos（tl/tr/bl/br）から求める
+  function badgeCorner(r, pos) {
+    const x = pos === "tr" || pos === "br" ? r.left + r.width : r.left;
+    const y = pos === "bl" || pos === "br" ? r.top + r.height : r.top;
+    return { x, y };
+  }
+
   function styleBox(box, mark) {
     box.style.borderStyle = mark.lineStyle;
     box.style.borderWidth = `${mark.width}px`;
     box.style.borderColor = mark.color;
     box.style.borderRadius = `${mark.radius}px`;
-    box.style.boxShadow = `0 0 0 1px ${mark.color}55, 0 0 12px ${mark.color}40`;
   }
 
   function syncPositions() {
@@ -139,10 +154,11 @@
       mark.box.style.display = "block";
       mark.badge.style.display = state.showLabel ? "flex" : "none";
       applyRect(mark.box, r);
-      // バッジの中心を（余白を含めた）枠の左上角に合わせる。
+      // バッジの中心を（余白を含めた）枠の指定角に合わせる。
       // 後段の translate(-50%,-50%) はバッジ自身のサイズ基準で半分戻すため、
       // 角を中心に縦横半分ずつはみ出して重なる（プレビューと同じ見え方）。
-      mark.badge.style.transform = `translate(${r.left}px, ${r.top}px) translate(-50%, -50%)`;
+      const c = badgeCorner(r, state.labelPos);
+      mark.badge.style.transform = `translate(${c.x}px, ${c.y}px) translate(-50%, -50%)`;
     }
   }
 
@@ -274,6 +290,29 @@
     });
   }
 
+  // 指定された id 順に marks を並べ替える（panel のドラッグ操作で連番を入れ替える）
+  function reorderMarks(ids) {
+    if (!Array.isArray(ids)) return;
+    const byId = new Map(state.marks.map((m) => [m.id, m]));
+    const next = [];
+    for (const id of ids) {
+      const m = byId.get(id);
+      if (m) {
+        next.push(m);
+        byId.delete(id);
+      }
+    }
+    // ids に載らなかったマークは元の順序で末尾に残す（取りこぼし防止）
+    for (const m of state.marks) {
+      if (byId.has(m.id)) next.push(m);
+    }
+    if (next.length !== state.marks.length) return;
+    state.marks = next;
+    relabel();
+    syncPositions();
+    broadcast();
+  }
+
   function removeMark(id) {
     const i = state.marks.findIndex((m) => m.id === id);
     if (i === -1) return;
@@ -370,6 +409,13 @@
     syncPositions();
   }
 
+  function setLabelPos(pos) {
+    if (pos === "tl" || pos === "tr" || pos === "bl" || pos === "br") {
+      state.labelPos = pos;
+      syncPositions();
+    }
+  }
+
   // ---- メッセージ受信 ---------------------------------------------------
 
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -379,6 +425,7 @@
           enabled: state.enabled,
           style: state.style,
           showLabel: state.showLabel,
+          labelPos: state.labelPos,
           marks: serializeMarks(),
         });
         break;
@@ -386,6 +433,11 @@
         setShowLabel(msg.show);
         persistSettings();
         sendResponse({ ok: true, showLabel: state.showLabel });
+        break;
+      case "MM_SET_LABEL_POS":
+        setLabelPos(msg.pos);
+        persistSettings();
+        sendResponse({ ok: true, labelPos: state.labelPos });
         break;
       case "MM_SET_ENABLED":
         setEnabled(Boolean(msg.enabled));
@@ -410,6 +462,10 @@
         break;
       case "MM_REMOVE_MARK":
         removeMark(msg.id);
+        sendResponse({ ok: true });
+        break;
+      case "MM_REORDER_MARKS":
+        reorderMarks(msg.ids);
         sendResponse({ ok: true });
         break;
       case "MM_SCROLL_TO":

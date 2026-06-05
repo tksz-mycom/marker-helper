@@ -29,6 +29,7 @@ const els = {
   radius: document.getElementById("mm-radius"),
   radiusNum: document.getElementById("mm-radius-num"),
   labels: document.getElementById("mm-labels"),
+  labelPos: document.getElementById("mm-label-pos"),
   previewBox: document.getElementById("mm-preview-box"),
   previewBadge: document.getElementById("mm-preview-badge"),
   openPanel: document.getElementById("mm-open-panel"),
@@ -38,6 +39,7 @@ const els = {
 let activeTabId = null;
 let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 };
 let showLabel = false;
+let labelPos = "tl"; // 連番バッジの表示位置: tl | tr | bl | br
 
 // マイカラー（ユーザーが登録するカスタムパレット）。最大18色まで（9列×2行）。
 // content には関与させず popup 専用の UI 設定として chrome.storage.local に保存する。
@@ -281,6 +283,9 @@ function updatePreview() {
   els.previewBox.style.borderRadius = `${style.radius}px`;
   els.previewBadge.style.background = style.color;
   els.previewBadge.hidden = !showLabel;
+  // ラベル位置をプレビューにも反映
+  els.previewBox.classList.remove("pos-tl", "pos-tr", "pos-bl", "pos-br");
+  els.previewBox.classList.add(`pos-${labelPos}`);
 }
 
 // ---- 状態更新 ---------------------------------------------------------
@@ -336,8 +341,18 @@ function setRadius(value) {
 function setShowLabel(show) {
   showLabel = Boolean(show);
   els.labels.checked = showLabel;
+  // ラベルOFFのときは位置セグメントを無効化
+  els.labelPos.classList.toggle("is-disabled", !showLabel);
   updatePreview();
   sendToTab({ type: "MM_SET_LABELS", show: showLabel });
+}
+
+function setLabelPos(pos) {
+  if (!["tl", "tr", "bl", "br"].includes(pos)) return;
+  labelPos = pos;
+  reflectSegmented(els.labelPos, pos);
+  updatePreview();
+  sendToTab({ type: "MM_SET_LABEL_POS", pos });
 }
 
 function setCount(n) {
@@ -379,6 +394,11 @@ function wireEvents() {
 
   els.labels.addEventListener("change", () => setShowLabel(els.labels.checked));
 
+  els.labelPos.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-value]");
+    if (btn) setLabelPos(btn.dataset.value);
+  });
+
   els.openPanel.addEventListener("click", async () => {
     try {
       await chrome.sidePanel.open({ tabId: activeTabId });
@@ -419,14 +439,17 @@ async function init() {
 
   style = { ...style, ...state.style };
   showLabel = state.showLabel !== false;
+  labelPos = ["tl", "tr", "bl", "br"].includes(state.labelPos) ? state.labelPos : "tl";
   els.enabled.checked = Boolean(state.enabled);
   els.labels.checked = showLabel;
+  els.labelPos.classList.toggle("is-disabled", !showLabel);
   reflectColor();
   reflectSegmented(els.line, style.lineStyle);
   reflectSegmented(els.width, style.width);
   reflectSlider(els.widthRange, els.widthNum, clampWidth(style.width));
   reflectSlider(els.padding, els.paddingNum, clampSpacing(style.padding));
   reflectSlider(els.radius, els.radiusNum, clampSpacing(style.radius));
+  reflectSegmented(els.labelPos, labelPos);
   setCount(state.marks?.length ?? 0);
 
   wireEvents();
