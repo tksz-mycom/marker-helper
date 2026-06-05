@@ -3,7 +3,7 @@
   "name": "Marker HELP",
   "version": "1.0.0",
   "description": "ホバーで要素をハイライトし、クリックで番号付きマークを固定。色・線種を選び、サイドパネルでマーク一覧とCSSセレクタを確認・コピーできます。",
-  "permissions": ["sidePanel", "tabs"],
+  "permissions": ["sidePanel", "tabs", "storage"],
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Marker HELP",

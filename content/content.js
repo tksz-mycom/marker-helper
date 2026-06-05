@@ -25,6 +25,48 @@
     hoverTarget: /** @type {Element|null} */ (null),
   };
 
+  // ---- 設定の永続化 -----------------------------------------------------
+  // 最後に選んだスタイルとラベル表示は chrome.storage.local に保存し、
+  // 次回の content 注入時（新規ページ・リロード）に復元する。
+  // マーク自体は従来どおり永続化しない（タブ内メモリのみ）。
+  const SETTINGS_KEY = "mm:settings";
+
+  function persistSettings() {
+    try {
+      chrome.storage.local.set({
+        [SETTINGS_KEY]: { style: state.style, showLabel: state.showLabel },
+      });
+    } catch {
+      /* storage 権限が無い等は無視 */
+    }
+  }
+
+  function restoreSettings() {
+    try {
+      chrome.storage.local.get(SETTINGS_KEY, (data) => {
+        if (chrome.runtime.lastError) return;
+        const saved = data && data[SETTINGS_KEY];
+        if (!saved) return;
+        if (saved.style) {
+          state.style = {
+            color: saved.style.color ?? state.style.color,
+            lineStyle: saved.style.lineStyle ?? state.style.lineStyle,
+            width: saved.style.width ?? state.style.width,
+            padding: saved.style.padding ?? state.style.padding,
+            radius: saved.style.radius ?? state.style.radius,
+          };
+        }
+        if (typeof saved.showLabel === "boolean") {
+          state.showLabel = saved.showLabel;
+        }
+        // 既にホバー枠やマークが描画されていれば見た目へ反映
+        syncPositions();
+      });
+    } catch {
+      /* 無視 */
+    }
+  }
+
   // ---- オーバーレイ構築 -------------------------------------------------
 
   let root = null;
@@ -344,6 +386,7 @@
         break;
       case "MM_SET_LABELS":
         setShowLabel(msg.show);
+        persistSettings();
         sendResponse({ ok: true, showLabel: state.showLabel });
         break;
       case "MM_SET_ENABLED":
@@ -360,6 +403,7 @@
             radius: msg.style.radius ?? state.style.radius,
           };
         }
+        persistSettings();
         sendResponse({ ok: true, style: state.style });
         break;
       case "MM_CLEAR_ALL":
@@ -379,4 +423,7 @@
     }
     return true; // 非同期応答の可能性に備える
   });
+
+  // 保存済みの設定（スタイル・ラベル表示）を復元する
+  restoreSettings();
 })();

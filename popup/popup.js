@@ -18,6 +18,8 @@ const els = {
   main: document.getElementById("mm-main"),
   enabled: document.getElementById("mm-enabled"),
   swatches: document.getElementById("mm-swatches"),
+  mypalette: document.getElementById("mm-mypalette"),
+  addColor: document.getElementById("mm-add-color"),
   color: document.getElementById("mm-color"),
   line: document.getElementById("mm-line"),
   width: document.getElementById("mm-width"),
@@ -35,6 +37,13 @@ const els = {
 let activeTabId = null;
 let style = { color: "#ff3b30", lineStyle: "solid", width: 3, padding: 8, radius: 8 };
 let showLabel = false;
+
+// マイカラー（ユーザーが登録するカスタムパレット）。最大6色まで。
+// content には関与させず popup 専用の UI 設定として chrome.storage.local に保存する。
+const MAX_CUSTOM_COLORS = 6;
+const CUSTOM_COLORS_KEY = "mm:customColors";
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+let customColors = [];
 
 // マーカーの余白・角丸は 0〜40px（1px刻み）
 const MAX_SPACING = 40;
@@ -85,8 +94,111 @@ function reflectColor() {
   for (const btn of els.swatches.children) {
     btn.setAttribute("aria-checked", btn.dataset.color === style.color ? "true" : "false");
   }
-  els.color.value = /^#[0-9a-f]{6}$/i.test(style.color) ? style.color : "#ff3b30";
+  // マイカラーの選択ハイライトも同期
+  for (const slot of els.mypalette.querySelectorAll(".mm-myslot[data-color]")) {
+    slot.classList.toggle("is-selected", slot.dataset.color.toLowerCase() === style.color.toLowerCase());
+  }
+  els.color.value = HEX_RE.test(style.color) ? style.color : "#ff3b30";
   updatePreview();
+}
+
+// ---- マイカラー（カスタムパレット） ----------------------------------
+
+function loadCustomColors() {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.local.get(CUSTOM_COLORS_KEY, (data) => {
+        void chrome.runtime.lastError;
+        const saved = data && data[CUSTOM_COLORS_KEY];
+        customColors = Array.isArray(saved)
+          ? saved.filter((c) => typeof c === "string" && HEX_RE.test(c)).slice(0, MAX_CUSTOM_COLORS)
+          : [];
+        resolve();
+      });
+    } catch {
+      customColors = [];
+      resolve();
+    }
+  });
+}
+
+function saveCustomColors() {
+  try {
+    chrome.storage.local.set({ [CUSTOM_COLORS_KEY]: customColors });
+  } catch {
+    /* storage 権限が無い等は無視 */
+  }
+}
+
+function buildMyPalette() {
+  els.mypalette.textContent = "";
+
+  customColors.forEach((color, i) => {
+    const wrap = document.createElement("div");
+    wrap.className = "mm-myslot-wrap";
+
+    const slot = document.createElement("button");
+    slot.type = "button";
+    slot.className = "mm-myslot";
+    slot.style.background = color;
+    slot.dataset.color = color;
+    slot.setAttribute("aria-label", `マイカラー ${color}`);
+    slot.addEventListener("click", () => setColor(color));
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "mm-myslot-del";
+    del.textContent = "×";
+    del.setAttribute("aria-label", `${color} を削除`);
+    del.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeCustomColor(i);
+    });
+
+    wrap.appendChild(slot);
+    wrap.appendChild(del);
+    els.mypalette.appendChild(wrap);
+  });
+
+  // 空き枠が残っていれば「＋」を1つ表示する
+  if (customColors.length < MAX_CUSTOM_COLORS) {
+    const add = document.createElement("button");
+    add.type = "button";
+    add.className = "mm-myslot-add";
+    add.textContent = "＋";
+    add.setAttribute("aria-label", "色を選んでマイカラーに追加");
+    add.addEventListener("click", openAddColor);
+    els.mypalette.appendChild(add);
+  }
+
+  reflectColor();
+}
+
+// 「＋」: 現在の色を初期値に隠しカラーピッカーを開く
+function openAddColor() {
+  els.addColor.value = HEX_RE.test(style.color) ? style.color : "#ff3b30";
+  els.addColor.click();
+}
+
+function addCustomColor(color) {
+  if (!HEX_RE.test(color)) return;
+  const exists = customColors.some((c) => c.toLowerCase() === color.toLowerCase());
+  if (exists) {
+    // 既に登録済みなら選択だけして重複させない
+    setColor(color);
+    return;
+  }
+  if (customColors.length >= MAX_CUSTOM_COLORS) return;
+  customColors = [...customColors, color];
+  saveCustomColors();
+  buildMyPalette();
+  setColor(color); // 追加した色を即適用
+}
+
+function removeCustomColor(index) {
+  customColors = customColors.filter((_, i) => i !== index);
+  saveCustomColors();
+  buildMyPalette();
 }
 
 function reflectSegmented(group, value) {
@@ -174,6 +286,9 @@ function wireEvents() {
 
   els.color.addEventListener("input", () => setColor(els.color.value));
 
+  // マイカラー登録用の隠しピッカーで色を確定したら追加
+  els.addColor.addEventListener("change", () => addCustomColor(els.addColor.value));
+
   els.line.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-value]");
     if (btn) setLineStyle(btn.dataset.value);
@@ -215,6 +330,8 @@ function wireEvents() {
 
 async function init() {
   buildSwatches();
+  await loadCustomColors();
+  buildMyPalette();
 
   const tab = await getActiveTab();
   if (!tab || !tab.id || !tab.url || UNSUPPORTED.test(tab.url)) {

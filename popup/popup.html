@@ -39,10 +39,16 @@
       <section class="mm-field">
         <h2>枠の色</h2>
         <div class="mm-swatches" id="mm-swatches" role="radiogroup" aria-label="枠の色"></div>
+
+        <h3 class="mm-subhead">枠の色（マイカラー）</h3>
+        <div class="mm-mypalette" id="mm-mypalette" aria-label="マイカラー（自分で登録した色）"></div>
+
         <label class="mm-custom-color">
           <span>カスタム</span>
           <input type="color" id="mm-color" value="#ff3b30" />
         </label>
+        <!-- マイカラー登録用の隠しカラーピッカー（「＋」スロットから起動） -->
+        <input type="color" id="mm-add-color" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" value="#ff3b30" />
       </section>
 
       <!-- 線種 -->
