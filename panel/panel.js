@@ -1,4 +1,4 @@
-// Marker HELP — side panel
+// Marker:HELPER — side panel
 // アクティブタブのマーク一覧を表示し、コピー・位置移動・削除を行う。
 
 const listEl = document.getElementById("mm-list");
@@ -119,10 +119,19 @@ function buildItem(mark) {
 }
 
 let currentMarks = [];
+// 並べ替え直後の再描画ではフェードイン（点滅）を1回だけ抑制する
+let suppressAnimOnce = false;
+// ドラッグ中は再描画を抑止し、掴んでいる要素が破棄されないようにする
+let isDragging = false;
 
 function render(marks) {
+  // ドラッグ操作中の再描画は掴んだ要素を消してしまうため抑止する。
+  // ドラッグ確定後は commitOrder の更新通知で改めて描画される。
+  if (isDragging) return;
   currentMarks = marks || [];
   countEl.textContent = String(currentMarks.length);
+  listEl.classList.toggle("mm-no-anim", suppressAnimOnce);
+  suppressAnimOnce = false;
   listEl.replaceChildren();
 
   if (currentMarks.length === 0) {
@@ -163,12 +172,15 @@ function relabelDom() {
 function commitOrder() {
   const ids = [...listEl.querySelectorAll(".mm-item")].map((li) => Number(li.dataset.id));
   relabelDom();
+  // この直後に届く更新通知の再描画ではアニメを抑制する
+  suppressAnimOnce = true;
   sendToTab({ type: "MM_REORDER_MARKS", ids });
 }
 
 listEl.addEventListener("dragstart", (e) => {
   const li = e.target.closest(".mm-item");
   if (!li) return;
+  isDragging = true;
   li.classList.add("mm-dragging");
   e.dataTransfer.effectAllowed = "move";
   try {
@@ -193,6 +205,7 @@ listEl.addEventListener("drop", (e) => {
 });
 
 listEl.addEventListener("dragend", () => {
+  isDragging = false;
   const dragging = listEl.querySelector(".mm-dragging");
   if (!dragging) return;
   dragging.classList.remove("mm-dragging");
@@ -208,6 +221,8 @@ async function reload() {
     return;
   }
   reloading = true;
+  // タブ切替・再読み込み由来の描画では並べ替えのアニメ抑制を持ち越さない
+  suppressAnimOnce = false;
   try {
     const ok = await resolveActiveTab();
     if (!ok) {

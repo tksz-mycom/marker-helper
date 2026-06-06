@@ -173,6 +173,10 @@ body {
     transform: translateY(4px);
   }
 }
+/* 並べ替え直後の再描画ではフェードインを止めて点滅を防ぐ */
+.mm-list.mm-no-anim .mm-item {
+  animation: none;
+}
 
 /* ドラッグ並べ替え中の項目 */
 .mm-item.mm-dragging {

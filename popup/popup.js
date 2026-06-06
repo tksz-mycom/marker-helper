@@ -1,4 +1,4 @@
-// Marker HELP — popup
+// Marker:HELPER — popup
 // 色・線種・線幅の選択、マークモードの切替、サイドパネルの起動を担当する。
 
 const PRESET_COLORS = [
@@ -322,27 +322,34 @@ function reflectSlider(range, num, value) {
   num.value = String(value);
 }
 
-function setPadding(value) {
+// 余白・角丸など「スライダー＋数値入力」で px 指定する数値スタイルの共通更新
+function setSpacing(key, range, num, value) {
   const v = clampSpacing(value);
-  style = { ...style, padding: v };
-  reflectSlider(els.padding, els.paddingNum, v);
+  style = { ...style, [key]: v };
+  reflectSlider(range, num, v);
   updatePreview();
   pushStyle();
 }
 
+function setPadding(value) {
+  setSpacing("padding", els.padding, els.paddingNum, value);
+}
+
 function setRadius(value) {
-  const v = clampSpacing(value);
-  style = { ...style, radius: v };
-  reflectSlider(els.radius, els.radiusNum, v);
-  updatePreview();
-  pushStyle();
+  setSpacing("radius", els.radius, els.radiusNum, value);
+}
+
+// 位置セグメントの有効/無効を切り替える。
+// pointer-events だけだとキーボード操作が通るため disabled 属性も設定する。
+function setLabelPosEnabled(enabled) {
+  els.labelPos.classList.toggle("is-disabled", !enabled);
+  for (const btn of els.labelPos.children) btn.disabled = !enabled;
 }
 
 function setShowLabel(show) {
   showLabel = Boolean(show);
   els.labels.checked = showLabel;
-  // ラベルOFFのときは位置セグメントを無効化
-  els.labelPos.classList.toggle("is-disabled", !showLabel);
+  setLabelPosEnabled(showLabel);
   updatePreview();
   sendToTab({ type: "MM_SET_LABELS", show: showLabel });
 }
@@ -404,7 +411,7 @@ function wireEvents() {
       await chrome.sidePanel.open({ tabId: activeTabId });
       window.close();
     } catch (err) {
-      console.error("[Marker HELP] サイドパネルを開けません:", err);
+      console.error("[Marker:HELPER] サイドパネルを開けません:", err);
     }
   });
 
@@ -442,7 +449,7 @@ async function init() {
   labelPos = ["tl", "tr", "bl", "br"].includes(state.labelPos) ? state.labelPos : "tl";
   els.enabled.checked = Boolean(state.enabled);
   els.labels.checked = showLabel;
-  els.labelPos.classList.toggle("is-disabled", !showLabel);
+  setLabelPosEnabled(showLabel);
   reflectColor();
   reflectSegmented(els.line, style.lineStyle);
   reflectSegmented(els.width, style.width);

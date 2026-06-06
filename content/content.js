@@ -1,4 +1,4 @@
-// Marker HELP — content script
+// Marker:HELPER — content script
 // ホバーで要素をハイライトし、クリックで番号付きマークを固定する。
 // マーク状態はこのスクリプトのメモリ内に保持する（セッション内のみ。リロードで消える）。
 

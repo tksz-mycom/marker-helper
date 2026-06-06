@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 概要
 
-「Marker HELP」は、Webページ上の要素をホバーで強調・クリックで番号付きマークとして固定し、サイドパネルでCSSセレクタを確認・コピーできる Chrome 拡張機能（Manifest V3）です。
+「Marker:HELPER」は、Webページ上の要素をホバーで強調・クリックで番号付きマークとして固定し、サイドパネルでCSSセレクタを確認・コピーできるER Chrome 拡張機能（Manifest V3）です。
 
 ## ビルド・テスト・実行
 

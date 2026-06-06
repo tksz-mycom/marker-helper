@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Marker HELP",
+  "name": "Marker:HELPER",
   "version": "1.0.0",
-  "description": "ホバーで要素をハイライトし、クリックで番号付きマークを固定。色・線種を選び、サイドパネルでマーク一覧とCSSセレクタを確認・コピーできます。",
+  "description": "DOM要素にマーカーを自由に設定できます。マーカーは、要素の上に重ねて表示され、要素を視覚的に識別するのに役立ちます。",
   "permissions": ["sidePanel", "tabs", "storage"],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Marker HELP",
+    "default_title": "Marker:HELPER",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
