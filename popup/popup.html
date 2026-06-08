@@ -96,18 +96,20 @@
         </div>
       </section>
 
-      <!-- 線幅 -->
+      <!-- 線幅（細/中/太のプリセットとスライダーを1枚のカードにまとめる） -->
       <section class="mm-field">
         <h2>線幅</h2>
-        <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅">
-          <button type="button" data-value="2">細</button>
-          <button type="button" data-value="4" class="is-active">中</button>
-          <button type="button" data-value="6">太</button>
-        </div>
-        <div class="mm-slider-row">
-          <input type="range" id="mm-width-range" class="mm-range" min="1" max="20" step="1" value="4" aria-label="線幅" />
-          <input type="number" id="mm-width-num" class="mm-num" min="1" max="20" step="1" value="4" aria-label="線幅(px)" />
-          <span class="mm-unit">px</span>
+        <div class="mm-width-card">
+          <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅">
+            <button type="button" data-value="2">細</button>
+            <button type="button" data-value="4" class="is-active">中</button>
+            <button type="button" data-value="6">太</button>
+          </div>
+          <div class="mm-slider-row">
+            <input type="range" id="mm-width-range" class="mm-range" min="1" max="20" step="1" value="4" aria-label="線幅" />
+            <input type="number" id="mm-width-num" class="mm-num" min="1" max="20" step="1" value="4" aria-label="線幅(px)" />
+            <span class="mm-unit">px</span>
+          </div>
         </div>
       </section>
 
