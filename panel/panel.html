@@ -15,12 +15,41 @@
       </div>
       <div class="mm-bar-actions">
         <button type="button" id="mm-copy-all" class="mm-icon-btn" title="全セレクタをコピー">
-          まとめてコピー
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+          </svg>
+          <span>まとめてコピー</span>
         </button>
         <button type="button" id="mm-clear-all" class="mm-icon-btn mm-danger" title="すべてクリア">
-          すべてクリア
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+          </svg>
+          <span>すべてクリア</span>
         </button>
       </div>
+      <div class="mm-bar-actions">
+        <button type="button" id="mm-export" class="mm-icon-btn" title="マーク一覧をJSONファイルに保存">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          <span>エクスポート</span>
+        </button>
+        <button type="button" id="mm-import" class="mm-icon-btn" title="JSONファイルからマーク一覧を復元">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </svg>
+          <span>インポート</span>
+        </button>
+      </div>
+      <!-- マーク一覧ファイル選択用の隠し input -->
+      <input type="file" id="mm-import-file" accept="application/json,.json" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" />
     </header>
 
     <p id="mm-empty" class="mm-empty">

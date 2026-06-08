@@ -262,15 +262,9 @@
     return state.marks.find((m) => m.el === el) || null;
   }
 
-  function addMark(el) {
-    ensureOverlay();
-    const existing = findMarkByElement(el);
-    if (existing) {
-      // 同じ要素を再クリックしたら解除（トグル）
-      removeMark(existing.id);
-      return;
-    }
-
+  // 要素と確定済みスタイルからマーク本体を生成して state へ積む（描画要素も作る）。
+  // 後処理（relabel / ループ起動 / 位置同期 / 通知）は呼び出し側で行う。
+  function buildMark(el, st) {
     const id = ++state.counter;
 
     const box = document.createElement("div");
@@ -278,7 +272,7 @@
 
     const badge = document.createElement("div");
     badge.className = "mm-mark-badge";
-    badge.style.background = state.style.color;
+    badge.style.background = st.color;
 
     const mark = {
       id,
@@ -286,12 +280,12 @@
       selector: generateSelector(el),
       tag: describeTag(el),
       text: snippet(el),
-      color: state.style.color,
-      lineStyle: state.style.lineStyle,
-      width: state.style.width,
-      padding: state.style.padding,
-      radius: state.style.radius,
-      transparency: state.style.transparency,
+      color: st.color,
+      lineStyle: st.lineStyle,
+      width: st.width,
+      padding: st.padding,
+      radius: st.radius,
+      transparency: st.transparency,
       el,
       box,
       badge,
@@ -301,10 +295,62 @@
     root.appendChild(badge);
 
     state.marks.push(mark);
+    return mark;
+  }
+
+  function addMark(el) {
+    ensureOverlay();
+    const existing = findMarkByElement(el);
+    if (existing) {
+      // 同じ要素を再クリックしたら解除（トグル）
+      removeMark(existing.id);
+      return;
+    }
+
+    buildMark(el, state.style);
     relabel();
     ensureLoop();
     syncPositions();
     broadcast();
+  }
+
+  // 一覧（エクスポートしたJSON）からマークを復元する。
+  // 各 item の selector で現在のページの要素を再特定し、見つかったものだけ復元する。
+  // 既存マークは置き換える（保存した一覧をそのまま読み込む想定）。
+  // 戻り値: { ok, restored, skipped }
+  function importMarks(items) {
+    if (!Array.isArray(items)) return { ok: false, restored: 0, skipped: 0 };
+    ensureOverlay();
+    clearAll(); // 置き換え方式: 既存マークを一旦すべて消す
+
+    let restored = 0;
+    let skipped = 0;
+    for (const item of items) {
+      if (!item || typeof item.selector !== "string") {
+        skipped++;
+        continue;
+      }
+      let el = null;
+      try {
+        el = document.querySelector(item.selector);
+      } catch {
+        el = null; // 不正なセレクタは無視
+      }
+      // 要素が見つからない／既に同一要素をマーク済みなら除外
+      if (!(el instanceof Element) || findMarkByElement(el)) {
+        skipped++;
+        continue;
+      }
+      // スタイルは content 側の値域で検証・クランプしてから採用する
+      buildMark(el, sanitizeStyle(item, state.style));
+      restored++;
+    }
+
+    relabel();
+    ensureLoop();
+    syncPositions();
+    broadcast();
+    return { ok: true, restored, skipped };
   }
 
   // 表示用の連番を配列の並び順から振り直す（削除後も番号を飛ばさず1から連番にする）
@@ -380,6 +426,24 @@
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
+      detached: !document.contains(m.el),
+    }));
+  }
+
+  // エクスポート用: 復元に必要なスタイル（padding/radius/transparency 含む）を全て出す。
+  // 表示用の serializeMarks とは別物（内部 id は端末固有のため含めない）。
+  function serializeMarksForExport() {
+    return state.marks.map((m) => ({
+      label: m.label,
+      selector: m.selector,
+      tag: m.tag,
+      text: m.text,
+      color: m.color,
+      lineStyle: m.lineStyle,
+      width: m.width,
+      padding: m.padding,
+      radius: m.radius,
+      transparency: m.transparency,
       detached: !document.contains(m.el),
     }));
   }
@@ -490,6 +554,13 @@
       case "MM_SCROLL_TO":
         scrollToMark(msg.id);
         sendResponse({ ok: true });
+        break;
+      case "MM_EXPORT_MARKS":
+        // 復元用に全スタイルとページURLを返す（保存は panel 側で行う）
+        sendResponse({ ok: true, url: location.href, marks: serializeMarksForExport() });
+        break;
+      case "MM_IMPORT_MARKS":
+        sendResponse(importMarks(msg.marks));
         break;
       default:
         return false;

@@ -43,9 +43,13 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 | `MM_REMOVE_MARK` | panel → content | 指定IDのマーク削除 |
 | `MM_REORDER_MARKS` | panel → content | 指定ID順にマークを並べ替え（連番ラベルを入替え） |
 | `MM_SCROLL_TO` | panel → content | 指定IDの要素へスクロール＆点滅 |
+| `MM_EXPORT_MARKS` | panel → content | 復元用にマーク一覧（全スタイル）と `location.href` を取得（保存は panel が実施） |
+| `MM_IMPORT_MARKS` | panel → content | JSONのマーク一覧を渡して復元。各 selector で要素を再特定し `{ok,restored,skipped}` を返す |
 | `MM_MARKS_UPDATED` | content → broadcast | マーク更新通知（popup=件数、panel=一覧を再描画） |
 
 （注: README のメッセージ表は `MM_SET_LABELS` が未記載で古い。コードを正とすること。）
+
+**マーク一覧のエクスポート／インポート（panel 専用）**。panel の「エクスポート／インポート」で、現在のマーク一覧を1つのJSON（`{app:"marker-helper", kind:"marks", version, exportedAt, url, marks}`）として**PCに保存・復元**できる。マーク本体は永続化しない方針のままで、入出力はユーザー操作時のファイル経由でのみ行う。エクスポートは content が `serializeMarksForExport`（`padding`/`radius`/`transparency` を含む復元用の全スタイル。表示用 `serializeMarks` とは別）とページURLを返し、panel が `Blob`+アンカー `download` で保存する（`downloads` 権限不要）。インポートは隠し `#mm-import-file` でファイルを読み、サイズ上限（2MB）・`app`/`kind` 識別子・配列形を検証してから `MM_IMPORT_MARKS` で content に渡す。content の `importMarks` は **既存マークを置き換える方式**で、各 `item.selector` を `document.querySelector` で再特定し、見つかった要素のみ `buildMark`（`addMark` と共用の生成関数）で復元、スタイルは `sanitizeStyle` でクランプする。見つからない／不正セレクタ／重複は除外し、復元/除外件数を panel のトーストで通知する。`buildMark` は `addMark` から抽出した共通生成関数で、後処理（`relabel`/`ensureLoop`/`syncPositions`/`broadcast`）は呼び出し側が行う。
 
 ## 重要な実装上の不変条件
 

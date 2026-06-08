@@ -257,6 +257,118 @@ document.getElementById("mm-clear-all").addEventListener("click", async () => {
   render([]);
 });
 
+// ---- マーク一覧の入出力（PCへのエクスポート／インポート） -------------
+
+// マーク一覧ファイルの識別子と上限サイズ
+const MARKS_FILE_APP = "marker-helper";
+const MARKS_FILE_KIND = "marks";
+const MAX_IMPORT_BYTES = 2 * 1024 * 1024; // 2MB
+
+// 日付を YYYYMMDD でファイル名に使う
+function todayStamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+}
+
+function downloadJson(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// 現在のマーク一覧（スタイル込み）を content から取得し JSON ファイルに保存する。
+async function exportMarks() {
+  if (activeTabId == null) {
+    showToast("このページでは利用できません");
+    return;
+  }
+  if (currentMarks.length === 0) {
+    showToast("エクスポートするマークがありません");
+    return;
+  }
+  const res = await sendToTab({ type: "MM_EXPORT_MARKS" });
+  if (!res || !res.ok) {
+    showToast("エクスポートに失敗しました");
+    return;
+  }
+  const data = {
+    app: MARKS_FILE_APP,
+    kind: MARKS_FILE_KIND,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    url: res.url || "",
+    marks: res.marks || [],
+  };
+  downloadJson(data, `marker-helper-marks-${todayStamp()}.json`);
+  showToast(`${data.marks.length}件のマークをエクスポートしました`);
+}
+
+// 選択されたファイルを読み込み、検証してから content に渡してマークを復元する。
+function importMarksFromFile(file) {
+  if (!file) return;
+  if (activeTabId == null) {
+    showToast("このページでは利用できません");
+    return;
+  }
+  if (file.size > MAX_IMPORT_BYTES) {
+    showToast("ファイルが大きすぎます");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onerror = () => showToast("ファイルの読み込みに失敗しました");
+  reader.onload = async () => {
+    let data;
+    try {
+      data = JSON.parse(String(reader.result));
+    } catch {
+      showToast("読み込みに失敗しました（JSON形式エラー）");
+      return;
+    }
+    if (
+      !data ||
+      typeof data !== "object" ||
+      data.app !== MARKS_FILE_APP ||
+      data.kind !== MARKS_FILE_KIND ||
+      !Array.isArray(data.marks)
+    ) {
+      showToast("マーク一覧のファイルではありません");
+      return;
+    }
+    const res = await sendToTab({ type: "MM_IMPORT_MARKS", marks: data.marks });
+    if (!res || !res.ok) {
+      showToast("インポートに失敗しました");
+      return;
+    }
+    // 一覧は content からの更新通知で再描画される。ここでは結果だけ通知する
+    if (res.skipped > 0) {
+      showToast(`${res.restored}件を復元（${res.skipped}件は対象が見つからず除外）`);
+    } else {
+      showToast(`${res.restored}件のマークを復元しました`);
+    }
+  };
+  reader.readAsText(file);
+}
+
+const importFileEl = document.getElementById("mm-import-file");
+document.getElementById("mm-export").addEventListener("click", exportMarks);
+document.getElementById("mm-import").addEventListener("click", () => importFileEl.click());
+importFileEl.addEventListener("change", () => {
+  const file = importFileEl.files && importFileEl.files[0];
+  importMarksFromFile(file);
+  // 同じファイルを連続で選べるよう値をリセット
+  importFileEl.value = "";
+});
+
 // ---- 同期 -------------------------------------------------------------
 
 // content からの更新通知（アクティブタブのもののみ反映）

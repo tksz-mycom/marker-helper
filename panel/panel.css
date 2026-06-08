@@ -102,6 +102,10 @@ body {
 }
 .mm-icon-btn {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -112,6 +116,11 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.mm-icon-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
 }
 .mm-icon-btn:hover {
   background: var(--accent-weak);
@@ -125,6 +134,19 @@ body {
 .mm-icon-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* 画面外に隠す（マーク一覧ファイル選択用の隠し input） */
+.mm-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  overflow: hidden;
 }
 
 /* ---- 空状態 ---- */
