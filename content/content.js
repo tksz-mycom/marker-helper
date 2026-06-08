@@ -25,6 +25,33 @@
     hoverTarget: /** @type {Element|null} */ (null),
   };
 
+  // ---- スタイル値のサニタイズ -------------------------------------------
+  // 外部（chrome.storage や popup からのメッセージ）由来のスタイル値を、
+  // 受信側でも値域に丸めて取り込む（多層防御）。popup 側でもクランプ済みだが、
+  // ストレージ改変や将来の送信元追加に備えて content 側を信頼境界として扱う。
+  const LINE_STYLES = ["solid", "dashed", "dotted"];
+  const HEX_COLOR_RE = /^#[0-9a-f]{6}$/i;
+
+  // n を [min, max] に丸めた整数にする。数値化できなければ fallback を返す。
+  function clampInt(value, min, max, fallback) {
+    const n = Math.round(Number(value));
+    if (!Number.isFinite(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  // 部分的なスタイル入力を現在値ベースで検証・クランプして新しいスタイルを返す。
+  function sanitizeStyle(input, base) {
+    if (!input || typeof input !== "object") return { ...base };
+    return {
+      color: HEX_COLOR_RE.test(input.color) ? input.color : base.color,
+      lineStyle: LINE_STYLES.includes(input.lineStyle) ? input.lineStyle : base.lineStyle,
+      width: clampInt(input.width, 1, 20, base.width),
+      padding: clampInt(input.padding, 0, 40, base.padding),
+      radius: clampInt(input.radius, 0, 40, base.radius),
+      transparency: clampInt(input.transparency, 0, 100, base.transparency),
+    };
+  }
+
   // ---- 設定の永続化 -----------------------------------------------------
   // 最後に選んだスタイルとラベル表示は chrome.storage.local に保存し、
   // 次回の content 注入時（新規ページ・リロード）に復元する。
@@ -52,14 +79,7 @@
         const saved = data && data[SETTINGS_KEY];
         if (!saved) return;
         if (saved.style) {
-          state.style = {
-            color: saved.style.color ?? state.style.color,
-            lineStyle: saved.style.lineStyle ?? state.style.lineStyle,
-            width: saved.style.width ?? state.style.width,
-            padding: saved.style.padding ?? state.style.padding,
-            radius: saved.style.radius ?? state.style.radius,
-            transparency: saved.style.transparency ?? state.style.transparency,
-          };
+          state.style = sanitizeStyle(saved.style, state.style);
         }
         if (typeof saved.showLabel === "boolean") {
           state.showLabel = saved.showLabel;
@@ -450,14 +470,7 @@
         break;
       case "MM_SET_STYLE":
         if (msg.style) {
-          state.style = {
-            color: msg.style.color ?? state.style.color,
-            lineStyle: msg.style.lineStyle ?? state.style.lineStyle,
-            width: msg.style.width ?? state.style.width,
-            padding: msg.style.padding ?? state.style.padding,
-            radius: msg.style.radius ?? state.style.radius,
-            transparency: msg.style.transparency ?? state.style.transparency,
-          };
+          state.style = sanitizeStyle(msg.style, state.style);
         }
         persistSettings();
         sendResponse({ ok: true, style: state.style });
