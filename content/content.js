@@ -13,8 +13,8 @@
 
   const state = {
     enabled: false,
-    /** 新規マークに適用する現在のスタイル。padding は縁と枠線のすき間、radius は角丸(px) */
-    style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 },
+    /** 新規マークに適用する現在のスタイル。padding は縁と枠線のすき間、radius は角丸(px)、transparency は透明度(%) */
+    style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, transparency: 0 },
     /** 番号ラベル（連番バッジ）を表示するか（既定OFF） */
     showLabel: false,
     /** 番号バッジの表示位置: "tl" | "tr" | "bl" | "br"（既定は左上） */
@@ -58,6 +58,7 @@
             width: saved.style.width ?? state.style.width,
             padding: saved.style.padding ?? state.style.padding,
             radius: saved.style.radius ?? state.style.radius,
+            transparency: saved.style.transparency ?? state.style.transparency,
           };
         }
         if (typeof saved.showLabel === "boolean") {
@@ -127,6 +128,8 @@
     box.style.borderWidth = `${mark.width}px`;
     box.style.borderColor = mark.color;
     box.style.borderRadius = `${mark.radius}px`;
+    // 透明度(%) を不透明度(opacity)に変換して適用（0%=不透明, 100%=完全透明）
+    box.style.opacity = String(1 - (mark.transparency || 0) / 100);
   }
 
   function syncPositions() {
@@ -139,6 +142,7 @@
       applyRect(hoverBox, r);
       hoverBox.style.borderColor = state.style.color;
       hoverBox.style.borderRadius = `${state.style.radius}px`;
+      hoverBox.style.opacity = String(1 - (state.style.transparency || 0) / 100);
     } else {
       hoverBox.style.display = "none";
     }
@@ -267,6 +271,7 @@
       width: state.style.width,
       padding: state.style.padding,
       radius: state.style.radius,
+      transparency: state.style.transparency,
       el,
       box,
       badge,
@@ -451,6 +456,7 @@
             width: msg.style.width ?? state.style.width,
             padding: msg.style.padding ?? state.style.padding,
             radius: msg.style.radius ?? state.style.radius,
+            transparency: msg.style.transparency ?? state.style.transparency,
           };
         }
         persistSettings();

@@ -28,6 +28,8 @@ const els = {
   paddingNum: document.getElementById("mm-padding-num"),
   radius: document.getElementById("mm-radius"),
   radiusNum: document.getElementById("mm-radius-num"),
+  transparency: document.getElementById("mm-transparency"),
+  transparencyNum: document.getElementById("mm-transparency-num"),
   labels: document.getElementById("mm-labels"),
   labelPos: document.getElementById("mm-label-pos"),
   previewBox: document.getElementById("mm-preview-box"),
@@ -37,7 +39,7 @@ const els = {
 };
 
 let activeTabId = null;
-let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8 };
+let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, transparency: 0 };
 let showLabel = false;
 let labelPos = "tl"; // 連番バッジの表示位置: tl | tr | bl | br
 
@@ -60,6 +62,11 @@ const MIN_WIDTH = 1;
 const MAX_WIDTH = 20;
 const clampWidth = (n) =>
   Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(Number(n) || MIN_WIDTH)));
+
+// 透明度は 0〜100%（1%刻み）
+const MAX_TRANSPARENCY = 100;
+const clampTransparency = (n) =>
+  Math.min(MAX_TRANSPARENCY, Math.max(0, Math.round(Number(n) || 0)));
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
 
@@ -281,6 +288,8 @@ function updatePreview() {
   // 余白を文字と枠線のすき間として可視化する
   els.previewBox.style.padding = `${8 + style.padding}px ${18 + style.padding}px`;
   els.previewBox.style.borderRadius = `${style.radius}px`;
+  // 透明度(%) を不透明度(opacity)に変換して反映（0%=不透明, 100%=完全透明）
+  els.previewBox.style.opacity = String(1 - (style.transparency || 0) / 100);
   els.previewBadge.style.background = style.color;
   els.previewBadge.hidden = !showLabel;
   // ラベル位置をプレビューにも反映
@@ -337,6 +346,14 @@ function setPadding(value) {
 
 function setRadius(value) {
   setSpacing("radius", els.radius, els.radiusNum, value);
+}
+
+function setTransparency(value) {
+  const v = clampTransparency(value);
+  style = { ...style, transparency: v };
+  reflectSlider(els.transparency, els.transparencyNum, v);
+  updatePreview();
+  pushStyle();
 }
 
 // 位置セグメントの有効/無効を切り替える。
@@ -399,6 +416,10 @@ function wireEvents() {
   els.radius.addEventListener("input", () => setRadius(els.radius.value));
   els.radiusNum.addEventListener("change", () => setRadius(els.radiusNum.value));
 
+  // 透明度: スライダーは即時、数値入力は確定時に反映
+  els.transparency.addEventListener("input", () => setTransparency(els.transparency.value));
+  els.transparencyNum.addEventListener("change", () => setTransparency(els.transparencyNum.value));
+
   els.labels.addEventListener("change", () => setShowLabel(els.labels.checked));
 
   els.labelPos.addEventListener("click", (e) => {
@@ -456,6 +477,7 @@ async function init() {
   reflectSlider(els.widthRange, els.widthNum, clampWidth(style.width));
   reflectSlider(els.padding, els.paddingNum, clampSpacing(style.padding));
   reflectSlider(els.radius, els.radiusNum, clampSpacing(style.radius));
+  reflectSlider(els.transparency, els.transparencyNum, clampTransparency(style.transparency));
   reflectSegmented(els.labelPos, labelPos);
   setCount(state.marks?.length ?? 0);
 
