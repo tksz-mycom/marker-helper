@@ -53,10 +53,10 @@ body {
   height: 22px;
   border-radius: 6px;
   background: linear-gradient(135deg, #ff6a3d, var(--accent));
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
   position: relative;
   flex: none;
 }
+
 .mm-logo::after {
   content: "";
   position: absolute;
@@ -103,9 +103,11 @@ body {
   display: flex;
   flex-direction: column;
 }
+
 .mm-toggle-text strong {
   font-size: 13px;
 }
+
 .mm-toggle-text small {
   color: var(--muted);
   font-size: 11px;
@@ -126,6 +128,7 @@ body {
   background: #d8d2cd;
   transition: background 160ms ease;
 }
+
 .mm-switch::after {
   content: "";
   position: absolute;
@@ -138,16 +141,19 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transition: transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.mm-toggle input:checked ~ .mm-switch,
-.mm-inline-toggle input:checked ~ .mm-switch {
+
+.mm-toggle input:checked~.mm-switch,
+.mm-inline-toggle input:checked~.mm-switch {
   background: var(--accent);
 }
-.mm-toggle input:checked ~ .mm-switch::after,
-.mm-inline-toggle input:checked ~ .mm-switch::after {
+
+.mm-toggle input:checked~.mm-switch::after,
+.mm-inline-toggle input:checked~.mm-switch::after {
   transform: translateX(17px);
 }
-.mm-toggle input:focus-visible ~ .mm-switch,
-.mm-inline-toggle input:focus-visible ~ .mm-switch {
+
+.mm-toggle input:focus-visible~.mm-switch,
+.mm-inline-toggle input:focus-visible~.mm-switch {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -156,6 +162,7 @@ body {
 .mm-field {
   margin-top: var(--space-4);
 }
+
 .mm-field h2 {
   margin: 0 0 8px;
   font-size: 11px;
@@ -172,6 +179,7 @@ body {
   gap: 6px;
   margin-bottom: 8px;
 }
+
 .mm-swatch {
   aspect-ratio: 1;
   border-radius: 7px;
@@ -181,14 +189,17 @@ body {
   padding: 0;
   transition: transform 120ms ease, border-color 120ms ease;
 }
+
 .mm-swatch:hover {
   transform: scale(1.12);
 }
+
 .mm-swatch[aria-checked="true"] {
   border-color: #fff;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px var(--accent);
   transform: scale(1.08);
 }
+
 .mm-swatch:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
@@ -201,12 +212,14 @@ body {
   font-weight: 600;
   color: var(--muted);
 }
+
 .mm-mypalette {
   display: grid;
   grid-template-columns: repeat(9, 1fr);
   gap: 6px;
   margin-bottom: 10px;
 }
+
 .mm-myslot {
   position: relative;
   aspect-ratio: 1;
@@ -217,18 +230,22 @@ body {
   padding: 0;
   transition: transform 120ms ease, border-color 120ms ease;
 }
+
 .mm-myslot:hover {
   transform: scale(1.12);
 }
+
 .mm-myslot.is-selected {
   border-color: #fff;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15), 0 0 0 2px var(--accent);
   transform: scale(1.08);
 }
+
 .mm-myslot:focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 2px;
 }
+
 /* 削除ボタン（ホバー／フォーカスで表示） */
 .mm-myslot-del {
   position: absolute;
@@ -249,10 +266,12 @@ body {
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
+
 .mm-myslot:hover .mm-myslot-del,
 .mm-myslot-del:focus-visible {
   display: flex;
 }
+
 /* 空き枠（＋）: 現在の色を新規登録 */
 .mm-myslot-add {
   aspect-ratio: 1;
@@ -269,14 +288,17 @@ body {
   overflow: hidden;
   transition: border-color 120ms ease, color 120ms ease;
 }
+
 .mm-myslot-add:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
+
 .mm-myslot-add:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+
 /* 空きプレースホルダ: 9列×3行のグリッド形状を保つための非操作枠 */
 .mm-myslot-empty {
   aspect-ratio: 1;
@@ -307,6 +329,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 9px;
 }
+
 .mm-segmented button {
   flex: 1;
   padding: 7px 4px;
@@ -320,14 +343,17 @@ body {
   cursor: pointer;
   transition: background 120ms ease, color 120ms ease;
 }
+
 .mm-segmented button:hover {
   background: var(--accent-weak);
   color: var(--text);
 }
+
 .mm-segmented button.is-active {
   background: var(--accent);
   color: #fff;
 }
+
 .mm-segmented button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -340,6 +366,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 9px;
 }
+
 /* カード内のトグルはカード自体が枠になるため、行の枠を外す */
 .mm-label-card .mm-inline-toggle {
   padding: 0;
@@ -355,6 +382,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 9px;
 }
+
 /* カード内のセグメント・スライダー行はカード自体が枠になるため個別の枠を外す */
 .mm-width-card .mm-segmented,
 .mm-width-card .mm-slider-row {
@@ -368,9 +396,31 @@ body {
 .mm-label-pos {
   margin-top: 10px;
 }
+
 .mm-label-pos.is-disabled {
   opacity: 0.4;
   pointer-events: none;
+}
+
+/* 位置ボタンはテキストではなくアイコン（枠＋該当コーナーの点）で示す。
+   ボタンは 32x32 の正方形に固定し、グループ内で均等配置する。 */
+.mm-label-pos {
+  justify-content: space-between;
+}
+
+.mm-label-pos button {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mm-label-pos button svg {
+  width: 18px;
+  height: 18px;
 }
 
 /* インライントグル（表示オプション） */
@@ -386,17 +436,20 @@ body {
   cursor: pointer;
   user-select: none;
 }
+
 .mm-inline-text {
   display: flex;
   flex-direction: column;
   font-size: 12.5px;
   font-weight: 600;
 }
+
 .mm-inline-text small {
   font-weight: 400;
   font-size: 11px;
   color: var(--muted);
 }
+
 .mm-inline-toggle input {
   position: absolute;
   opacity: 0;
@@ -404,7 +457,7 @@ body {
 }
 
 /* セグメントの直後にスライダー行が続く場合（線幅）は間隔を空ける */
-.mm-segmented + .mm-slider-row {
+.mm-segmented+.mm-slider-row {
   margin-top: var(--space-2);
 }
 
@@ -418,6 +471,7 @@ body {
   border: 1px solid var(--line);
   border-radius: 9px;
 }
+
 .mm-range {
   flex: 1;
   min-width: 0;
@@ -428,6 +482,7 @@ body {
   border-radius: 999px;
   cursor: pointer;
 }
+
 .mm-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -439,6 +494,7 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
+
 .mm-range::-moz-range-thumb {
   width: 16px;
   height: 16px;
@@ -448,10 +504,12 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   cursor: pointer;
 }
+
 .mm-range:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
+
 .mm-num {
   width: 48px;
   padding: 5px 6px;
@@ -463,10 +521,12 @@ body {
   font-size: 12px;
   text-align: right;
 }
+
 .mm-num:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
 .mm-unit {
   font-size: 11px;
   color: var(--muted);
@@ -483,6 +543,7 @@ body {
   background: var(--hatch);
   border-radius: var(--radius);
 }
+
 #mm-preview-box {
   position: relative;
   padding: 8px 18px;
@@ -492,6 +553,7 @@ body {
   border: 3px solid var(--accent);
   border-radius: 4px;
 }
+
 .mm-preview-badge {
   position: absolute;
   top: -11px;
@@ -509,23 +571,27 @@ body {
   font-weight: 700;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
+
 /* ラベル位置に応じてプレビューのバッジも四隅へ */
 #mm-preview-box.pos-tr .mm-preview-badge {
   top: -11px;
   left: auto;
   right: -11px;
 }
+
 #mm-preview-box.pos-bl .mm-preview-badge {
   top: auto;
   bottom: -11px;
   left: -11px;
 }
+
 #mm-preview-box.pos-br .mm-preview-badge {
   top: auto;
   left: auto;
   bottom: -11px;
   right: -11px;
 }
+
 .mm-preview-badge[hidden] {
   display: none;
 }
@@ -548,14 +614,17 @@ body {
   transition: transform 80ms ease, background 120ms ease, border-color 120ms ease,
     color 120ms ease;
 }
+
 .mm-head-btn:hover {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
 }
+
 .mm-head-btn:active {
   transform: translateY(1px);
 }
+
 .mm-head-btn:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
@@ -579,6 +648,7 @@ body {
   font-weight: 700;
   border: 2px solid var(--bg);
 }
+
 .mm-count-badge[hidden] {
   display: none;
 }
