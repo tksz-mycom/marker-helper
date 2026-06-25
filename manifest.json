@@ -3,7 +3,7 @@
   "name": "Marker:HELPER",
   "version": "1.0.0",
   "description": "DOM要素にマーカーを自由に設定できます。マーカーは、要素の上に重ねて表示され、要素を視覚的に識別するのに役立ちます。",
-  "permissions": ["sidePanel", "tabs", "storage"],
+  "permissions": ["sidePanel", "tabs", "storage", "activeTab"],
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Marker:HELPER",

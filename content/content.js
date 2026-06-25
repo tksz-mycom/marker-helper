@@ -414,6 +414,39 @@
     mark.box.classList.add("mm-flash");
   }
 
+  // ---- スクショ撮影の下準備（panel から呼ばれる） ----------------------
+  // panel は「下準備 → captureVisibleTab → 復帰」の順で呼ぶ。clean=true の
+  // 場合は枠・番号のオーバーレイ層を一時的に隠し、素の要素だけを写せるようにする。
+  let captureRestoreTimer = null;
+
+  function prepareCapture(id, clean) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark || !document.contains(mark.el)) {
+      return { ok: false, reason: "detached" };
+    }
+    // 対象をビューポート中央へ（撮影のため瞬時にスクロール。smooth は使わない）
+    mark.el.scrollIntoView({ block: "center", inline: "center" });
+    if (clean && root) {
+      root.style.visibility = "hidden";
+    }
+    // panel が復帰メッセージを送れなかった場合の保険（一定時間後に必ず戻す）
+    clearTimeout(captureRestoreTimer);
+    captureRestoreTimer = setTimeout(restoreCapture, 3000);
+    const r = mark.el.getBoundingClientRect();
+    return {
+      ok: true,
+      rect: { x: r.left, y: r.top, width: r.width, height: r.height },
+      dpr: window.devicePixelRatio || 1,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    };
+  }
+
+  function restoreCapture() {
+    clearTimeout(captureRestoreTimer);
+    captureRestoreTimer = null;
+    if (root) root.style.visibility = "";
+  }
+
   // ---- 状態の直列化と通知 ----------------------------------------------
 
   function serializeMarks() {
@@ -553,6 +586,13 @@
         break;
       case "MM_SCROLL_TO":
         scrollToMark(msg.id);
+        sendResponse({ ok: true });
+        break;
+      case "MM_CAPTURE_PREPARE":
+        sendResponse(prepareCapture(msg.id, Boolean(msg.clean)));
+        break;
+      case "MM_CAPTURE_RESTORE":
+        restoreCapture();
         sendResponse({ ok: true });
         break;
       case "MM_EXPORT_MARKS":
