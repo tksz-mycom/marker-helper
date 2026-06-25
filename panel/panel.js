@@ -359,6 +359,110 @@ function importMarksFromFile(file) {
   reader.readAsText(file);
 }
 
+// ---- マーク部分のスクリーンショット ----------------------------------
+
+// スクロール・オーバーレイ切替後、撮影前に再描画の落ち着きを待つ時間
+const CAPTURE_SETTLE_MS = 250;
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ビューポート画像(dataUrl)を rect(CSS px)×dpr で切り出して PNG Blob にする。
+// ビューポート外へはみ出す分はクランプする（縦長要素の見切れは仕様として許容）。
+async function cropToBlob(dataUrl, rect, dpr, viewport) {
+  const img = await new Promise((resolve, reject) => {
+    const im = new Image();
+    im.onload = () => resolve(im);
+    im.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+    im.src = dataUrl;
+  });
+  const left = Math.max(0, rect.x);
+  const top = Math.max(0, rect.y);
+  const right = Math.min(viewport.width, rect.x + rect.width);
+  const bottom = Math.min(viewport.height, rect.y + rect.height);
+  const cssW = Math.max(1, right - left);
+  const cssH = Math.max(1, bottom - top);
+  const sx = Math.round(left * dpr);
+  const sy = Math.round(top * dpr);
+  const sw = Math.round(cssW * dpr);
+  const sh = Math.round(cssH * dpr);
+  const canvas = document.createElement("canvas");
+  canvas.width = sw;
+  canvas.height = sh;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("PNGの生成に失敗しました"));
+    }, "image/png");
+  });
+}
+
+// 対象マークのビューポート画像を取得し、要素部分を切り出した Blob を返す。
+// clean=true なら枠・番号を含めない。撮影後は必ず content の表示を復帰させる。
+async function captureMarkBlob(mark, clean) {
+  if (activeTabId == null) return { ok: false, reason: "unsupported" };
+  const prep = await sendToTab({ type: "MM_CAPTURE_PREPARE", id: mark.id, clean });
+  if (!prep || !prep.ok) {
+    return { ok: false, reason: prep?.reason || "prepare" };
+  }
+  try {
+    await delay(CAPTURE_SETTLE_MS); // スクロール・再描画の落ち着きを待つ
+    const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
+    const blob = await cropToBlob(dataUrl, prep.rect, prep.dpr, prep.viewport);
+    return { ok: true, blob };
+  } catch (err) {
+    return { ok: false, reason: "capture", message: String(err) };
+  } finally {
+    await sendToTab({ type: "MM_CAPTURE_RESTORE" });
+  }
+}
+
+// 撮影失敗時の理由に応じたトースト文言
+function captureErrorText(reason) {
+  if (reason === "detached") return "対象が見つかりません（消失したマーク）";
+  if (reason === "unsupported") return "このページでは利用できません";
+  return "画像の撮影に失敗しました";
+}
+
+// 対象マークの画像を PNG ファイルとして保存する。
+async function saveImage(mark, clean) {
+  const res = await captureMarkBlob(mark, clean);
+  if (!res.ok) {
+    showToast(captureErrorText(res.reason));
+    return;
+  }
+  const url = URL.createObjectURL(res.blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `marker-helper-shot-${todayStamp()}-${mark.label}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  showToast(`#${mark.label} の画像を保存しました`);
+}
+
+// 対象マークの画像をクリップボードへコピーする。
+async function copyImage(mark, clean) {
+  const res = await captureMarkBlob(mark, clean);
+  if (!res.ok) {
+    showToast(captureErrorText(res.reason));
+    return;
+  }
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": res.blob })]);
+    showToast(`#${mark.label} の画像をコピーしました`);
+  } catch {
+    showToast("画像のコピーに失敗しました");
+  }
+}
+
 const importFileEl = document.getElementById("mm-import-file");
 document.getElementById("mm-export").addEventListener("click", exportMarks);
 document.getElementById("mm-import").addEventListener("click", () => importFileEl.click());
@@ -384,5 +488,8 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (tabId === activeTabId && info.status === "complete") reload();
 });
 chrome.windows?.onFocusChanged?.addListener(() => reload());
+
+// [一時] 撮影コアの単体検証用。Task 3 完了時に削除する。
+window.__shotTest = (clean) => saveImage(currentMarks[0], clean !== false);
 
 reload();
