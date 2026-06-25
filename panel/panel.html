@@ -50,6 +50,10 @@
       </div>
       <!-- マーク一覧ファイル選択用の隠し input -->
       <input type="file" id="mm-import-file" accept="application/json,.json" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" />
+      <label class="mm-shot-opt" title="画像に枠・連番バッジを写し込むか">
+        <input type="checkbox" id="mm-shot-marks" />
+        <span>画像に枠・番号を含める</span>
+      </label>
     </header>
 
     <p id="mm-empty" class="mm-empty">
@@ -75,6 +79,8 @@
           <div class="mm-item-actions">
             <button type="button" class="mm-act mm-act-copy">コピー</button>
             <button type="button" class="mm-act mm-act-locate">位置へ</button>
+            <button type="button" class="mm-act mm-act-shot">画像保存</button>
+            <button type="button" class="mm-act mm-act-shot-copy">画像コピー</button>
             <button type="button" class="mm-act mm-act-delete">削除</button>
           </div>
         </div>

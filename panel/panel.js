@@ -6,6 +6,7 @@ const emptyEl = document.getElementById("mm-empty");
 const countEl = document.getElementById("mm-count");
 const tpl = document.getElementById("mm-item-tpl");
 const toastEl = document.getElementById("mm-toast");
+const includeMarksEl = document.getElementById("mm-shot-marks");
 
 let activeTabId = null;
 
@@ -107,6 +108,15 @@ function buildItem(mark) {
 
   node.querySelector(".mm-act-locate").addEventListener("click", () => {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
+  });
+
+  node.querySelector(".mm-act-shot").addEventListener("click", () => {
+    // チェックON = 枠・番号を含める = clean(素のみ) を false にする
+    saveImage(mark, !includeMarksEl.checked);
+  });
+
+  node.querySelector(".mm-act-shot-copy").addEventListener("click", () => {
+    copyImage(mark, !includeMarksEl.checked);
   });
 
   node.querySelector(".mm-act-delete").addEventListener("click", () => {
@@ -488,8 +498,5 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (tabId === activeTabId && info.status === "complete") reload();
 });
 chrome.windows?.onFocusChanged?.addListener(() => reload());
-
-// [一時] 撮影コアの単体検証用。Task 3 完了時に削除する。
-window.__shotTest = (clean) => saveImage(currentMarks[0], clean !== false);
 
 reload();

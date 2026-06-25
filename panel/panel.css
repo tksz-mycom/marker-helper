@@ -156,6 +156,25 @@ body {
   overflow: hidden;
 }
 
+/* ---- 撮影オプション（枠を含めるか） ---- */
+.mm-shot-opt {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mm-shot-opt input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* ---- 空状態 ---- */
 .mm-empty {
   margin: 0;
