@@ -419,7 +419,16 @@
   // 場合は枠・番号のオーバーレイ層を一時的に隠し、素の要素だけを写せるようにする。
   let captureRestoreTimer = null;
 
-  function prepareCapture(id, clean) {
+  // スクロール後にレイアウト・描画が落ち着くのを待つ時間
+  const CAPTURE_SETTLE_MS = 250;
+  // requestAnimationFrame + タイマーで再描画の落ち着きを待つ
+  function waitForSettle() {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => setTimeout(resolve, CAPTURE_SETTLE_MS));
+    });
+  }
+
+  async function prepareCapture(id, clean) {
     const mark = state.marks.find((m) => m.id === id);
     if (!mark || !document.contains(mark.el)) {
       return { ok: false, reason: "detached" };
@@ -432,6 +441,12 @@
     // panel が復帰メッセージを送れなかった場合の保険（一定時間後に必ず戻す）
     clearTimeout(captureRestoreTimer);
     captureRestoreTimer = setTimeout(restoreCapture, 3000);
+    await waitForSettle();
+    // 待機中に対象が外れた場合は復帰して中止
+    if (!document.contains(mark.el)) {
+      restoreCapture();
+      return { ok: false, reason: "detached" };
+    }
     const r = mark.el.getBoundingClientRect();
     return {
       ok: true,
@@ -589,7 +604,7 @@
         sendResponse({ ok: true });
         break;
       case "MM_CAPTURE_PREPARE":
-        sendResponse(prepareCapture(msg.id, Boolean(msg.clean)));
+        prepareCapture(msg.id, Boolean(msg.clean)).then(sendResponse);
         break;
       case "MM_CAPTURE_RESTORE":
         restoreCapture();

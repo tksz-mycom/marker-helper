@@ -371,13 +371,6 @@ function importMarksFromFile(file) {
 
 // ---- マーク部分のスクリーンショット ----------------------------------
 
-// スクロール・オーバーレイ切替後、撮影前に再描画の落ち着きを待つ時間
-const CAPTURE_SETTLE_MS = 250;
-
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 // ビューポート画像(dataUrl)を rect(CSS px)×dpr で切り出して PNG Blob にする。
 // ビューポート外へはみ出す分はクランプする（縦長要素の見切れは仕様として許容）。
 async function cropToBlob(dataUrl, rect, dpr, viewport) {
@@ -391,12 +384,13 @@ async function cropToBlob(dataUrl, rect, dpr, viewport) {
   const top = Math.max(0, rect.y);
   const right = Math.min(viewport.width, rect.x + rect.width);
   const bottom = Math.min(viewport.height, rect.y + rect.height);
-  const cssW = Math.max(1, right - left);
-  const cssH = Math.max(1, bottom - top);
+  if (right - left < 1 || bottom - top < 1) {
+    throw new Error("offscreen");
+  }
   const sx = Math.round(left * dpr);
   const sy = Math.round(top * dpr);
-  const sw = Math.round(cssW * dpr);
-  const sh = Math.round(cssH * dpr);
+  const sw = Math.max(1, Math.round(right * dpr) - sx);
+  const sh = Math.max(1, Math.round(bottom * dpr) - sy);
   const canvas = document.createElement("canvas");
   canvas.width = sw;
   canvas.height = sh;
@@ -419,12 +413,12 @@ async function captureMarkBlob(mark, clean) {
     return { ok: false, reason: prep?.reason || "prepare" };
   }
   try {
-    await delay(CAPTURE_SETTLE_MS); // スクロール・再描画の落ち着きを待つ
     const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
     const blob = await cropToBlob(dataUrl, prep.rect, prep.dpr, prep.viewport);
     return { ok: true, blob };
   } catch (err) {
-    return { ok: false, reason: "capture", message: String(err) };
+    const reason = err && err.message === "offscreen" ? "offscreen" : "capture";
+    return { ok: false, reason };
   } finally {
     await sendToTab({ type: "MM_CAPTURE_RESTORE" });
   }
@@ -434,6 +428,7 @@ async function captureMarkBlob(mark, clean) {
 function captureErrorText(reason) {
   if (reason === "detached") return "対象が見つかりません（消失したマーク）";
   if (reason === "unsupported") return "このページでは利用できません";
+  if (reason === "offscreen") return "対象が画面外のため撮影できません";
   return "画像の撮影に失敗しました";
 }
 
