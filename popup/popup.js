@@ -1,5 +1,5 @@
 // Marker:HELPER — popup
-// 色・線種・線幅の選択、マークモードの切替、サイドパネルの起動を担当する。
+// 色・線種・線幅の選択、マーキングモードの切替、サイドパネルの起動を担当する。
 
 const PRESET_COLORS = [
   "#ff3b30", // red
@@ -166,7 +166,7 @@ function buildMyPalette() {
 }
 
 function createColorSlot(color, index) {
-  // 「枠の色」スウォッチと同一構造: グリッドセル直下の単一要素に aspect-ratio:1 を当てる
+  // 「マーカーの色」スウォッチと同一構造: グリッドセル直下の単一要素に aspect-ratio:1 を当てる
   const slot = document.createElement("button");
   slot.type = "button";
   slot.className = "mm-myslot";

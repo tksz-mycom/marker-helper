@@ -86,7 +86,7 @@
   transform-origin: top left;
 }
 
-/* マークモード中はカーソルを十字に */
+/* マーキングモード中はカーソルを十字に */
 html.mm-marking,
 html.mm-marking * {
   cursor: crosshair !important;

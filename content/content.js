@@ -186,7 +186,7 @@
     }
   }
 
-  // マークがある／マークモード中だけ位置追従ループを回す。
+  // マークがある／マーキングモード中だけ位置追従ループを回す。
   // 対象が無いアイドル時は requestAnimationFrame を止め、CPU を消費しない。
   let loopId = null;
   function runLoop() {
