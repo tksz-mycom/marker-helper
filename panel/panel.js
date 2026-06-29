@@ -39,7 +39,16 @@ function saveShotMarks() {
   }
 }
 
-includeMarksEl.addEventListener("change", saveShotMarks);
+// 各マーカー個別の「マーカー込み」上書き状態（mark.id → bool）。
+// マーク本体と同じくタブ内メモリのみで保持し、リロードで消える（永続化しない）。
+// 未登録のマークはヘッダーの全体トグル（既定値）に従う。
+const shotInclOverrides = new Map();
+
+includeMarksEl.addEventListener("change", () => {
+  saveShotMarks();
+  // 未上書きの行を新しい既定値に追従させるため再描画する
+  render(currentMarks);
+});
 
 // ---- 通信 -------------------------------------------------------------
 
@@ -139,13 +148,22 @@ function buildItem(mark) {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
   });
 
+  // 行ごとの「マーカー込み」チェック。上書きがあればそれを、無ければ全体トグル（既定）を初期値にする。
+  const shotIncl = node.querySelector(".mm-act-shot-incl");
+  shotIncl.checked = shotInclOverrides.has(mark.id)
+    ? shotInclOverrides.get(mark.id)
+    : includeMarksEl.checked;
+  shotIncl.addEventListener("change", () => {
+    shotInclOverrides.set(mark.id, shotIncl.checked);
+  });
+
   node.querySelector(".mm-act-shot").addEventListener("click", () => {
-    // チェックON = 枠・番号を含める = clean(素のみ) を false にする
-    saveImage(mark, !includeMarksEl.checked);
+    // チェックON = マーカー・連番ラベルを含める = clean(素のみ) を false にする
+    saveImage(mark, !shotIncl.checked);
   });
 
   node.querySelector(".mm-act-shot-copy").addEventListener("click", () => {
-    copyImage(mark, !includeMarksEl.checked);
+    copyImage(mark, !shotIncl.checked);
   });
 
   node.querySelector(".mm-act-delete").addEventListener("click", () => {
@@ -168,6 +186,11 @@ function render(marks) {
   // ドラッグ確定後は commitOrder の更新通知で改めて描画される。
   if (isDragging) return;
   currentMarks = marks || [];
+  // 一覧から消えたマークの上書き状態は破棄する（id の使い回しによる誤適用を防ぐ）
+  const liveIds = new Set(currentMarks.map((m) => m.id));
+  for (const id of [...shotInclOverrides.keys()]) {
+    if (!liveIds.has(id)) shotInclOverrides.delete(id);
+  }
   countEl.textContent = String(currentMarks.length);
   listEl.classList.toggle("mm-no-anim", suppressAnimOnce);
   suppressAnimOnce = false;

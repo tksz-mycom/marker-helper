@@ -305,8 +305,29 @@ body {
 
 .mm-item-actions {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+
+/* 行ごとの「マーカー込み」上書きチェック */
+.mm-shot-incl {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mm-shot-incl input {
+  width: 13px;
+  height: 13px;
+  accent-color: var(--accent);
+  cursor: pointer;
 }
 
 .mm-act {
