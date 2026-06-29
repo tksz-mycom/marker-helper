@@ -328,6 +328,11 @@ body {
   background: var(--accent-weak);
 }
 
+/* クリア（単体削除）だけ右端へ寄せ、他のアクションと視覚的に分離する */
+.mm-act-delete {
+  margin-left: auto;
+}
+
 .mm-act-delete:hover {
   color: #fff;
   background: var(--accent);
