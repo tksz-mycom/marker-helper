@@ -447,13 +447,37 @@
       restoreCapture();
       return { ok: false, reason: "detached" };
     }
-    const r = mark.el.getBoundingClientRect();
     return {
       ok: true,
-      rect: { x: r.left, y: r.top, width: r.width, height: r.height },
+      rect: captureRect(mark, clean),
       dpr: window.devicePixelRatio || 1,
       viewport: { width: window.innerWidth, height: window.innerHeight },
     };
+  }
+
+  // 撮影の切り出し矩形を求める。clean=true は素の要素のみ。clean=false は
+  // 枠・連番バッジが要素の外側に描かれるため、それらの実矩形を含む範囲へ広げる
+  // （要素ぴったりだと枠・番号が切り落とされて写らないため）。
+  function captureRect(mark, clean) {
+    const base = mark.el.getBoundingClientRect();
+    if (clean) {
+      return { x: base.left, y: base.top, width: base.width, height: base.height };
+    }
+    let left = base.left;
+    let top = base.top;
+    let right = base.right;
+    let bottom = base.bottom;
+    // box は常時表示。badge は showLabel=OFF のとき display:none で 0 矩形になる。
+    for (const el of [mark.box, mark.badge]) {
+      if (!el || el.style.display === "none") continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 && r.height === 0) continue;
+      left = Math.min(left, r.left);
+      top = Math.min(top, r.top);
+      right = Math.max(right, r.right);
+      bottom = Math.max(bottom, r.bottom);
+    }
+    return { x: left, y: top, width: right - left, height: bottom - top };
   }
 
   function restoreCapture() {
