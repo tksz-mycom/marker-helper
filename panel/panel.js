@@ -12,6 +12,35 @@ let activeTabId = null;
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
 
+// ---- スクショ設定の永続化 ---------------------------------------------
+// 「スクリーンショットにマーカー・連番ラベルを含める」トグルの状態を保存する。
+// content には関与させず panel 専用の UI 設定として chrome.storage.local に保存する。
+const SHOT_MARKS_KEY = "mm:shotMarks";
+
+function loadShotMarks() {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.local.get(SHOT_MARKS_KEY, (data) => {
+        void chrome.runtime.lastError;
+        includeMarksEl.checked = !!(data && data[SHOT_MARKS_KEY]);
+        resolve();
+      });
+    } catch {
+      resolve();
+    }
+  });
+}
+
+function saveShotMarks() {
+  try {
+    chrome.storage.local.set({ [SHOT_MARKS_KEY]: includeMarksEl.checked });
+  } catch {
+    /* storage 権限が無い等は無視 */
+  }
+}
+
+includeMarksEl.addEventListener("change", saveShotMarks);
+
 // ---- 通信 -------------------------------------------------------------
 
 function sendToTab(message) {
@@ -494,4 +523,5 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
 });
 chrome.windows?.onFocusChanged?.addListener(() => reload());
 
+loadShotMarks();
 reload();
