@@ -232,7 +232,7 @@
       }
       const r = padRect(mark.el.getBoundingClientRect(), mark.padding);
       mark.box.style.display = "block";
-      mark.badge.style.display = (mark.showLabel ?? state.showLabel) ? "flex" : "none";
+      mark.badge.style.display = MMShared.effectiveShowLabel(mark.showLabel, state.showLabel) ? "flex" : "none";
       applyRect(mark.box, r);
       // バッジの中心を（余白を含めた）枠の指定角に合わせる。
       // 後段の translate(-50%,-50%) はバッジ自身のサイズ基準で半分戻すため、
