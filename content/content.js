@@ -469,6 +469,18 @@
     broadcast();
   }
 
+  // 既存マークの色だけを変更する（新規マークの既定スタイルには影響しない）。
+  // 枠・バッジへ即時反映し、panel の一覧へも通知する。
+  function setMarkColor(id, color) {
+    if (!HEX_COLOR_RE.test(color)) return;
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return;
+    mark.color = color;
+    mark.badge.style.background = color;
+    styleBox(mark.box, mark);
+    broadcast();
+  }
+
   function removeMark(id) {
     const i = state.marks.findIndex((m) => m.id === id);
     if (i === -1) return;
@@ -752,6 +764,10 @@
         break;
       case "MM_SET_NOTE":
         setNote(msg.id, msg.note);
+        sendResponse({ ok: true });
+        break;
+      case "MM_SET_MARK_COLOR":
+        setMarkColor(msg.id, msg.color);
         sendResponse({ ok: true });
         break;
       case "MM_REORDER_MARKS":

@@ -212,6 +212,15 @@ function buildItem(mark) {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
   });
 
+  // このマーカーの色を個別に変更する。確定時に content へ送り、即時反映させる。
+  const colorEl = node.querySelector(".mm-act-color");
+  colorEl.value = mark.color;
+  colorEl.addEventListener("change", () => {
+    // 変更通知による再描画でのフェードイン（点滅）を抑止する
+    suppressAnimOnce = true;
+    sendToTab({ type: "MM_SET_MARK_COLOR", id: mark.id, color: colorEl.value });
+  });
+
   // メモ（注釈）。content は再描画を伴わないため、確定時（change）に送って反映する。
   const noteEl = node.querySelector(".mm-note");
   noteEl.value = mark.note || "";

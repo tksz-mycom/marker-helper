@@ -606,6 +606,43 @@ body {
   z-index: 1;
 }
 
+/* マーカー色の変更スウォッチ（ネイティブ color input を小さな丸枠で見せる） */
+.mm-color {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  cursor: pointer;
+}
+
+.mm-act-color {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* 各ブラウザの color input の内側余白・枠を詰めてスウォッチらしく見せる */
+.mm-act-color::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+.mm-act-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.mm-act-color:hover {
+  border-color: var(--accent);
+}
+
+.mm-act-color:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* 行ごとの「マーカー込み」上書きチェック */
 .mm-shot-incl {
   display: inline-flex;
