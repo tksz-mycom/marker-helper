@@ -467,6 +467,10 @@ function wireEvents() {
 
 async function init() {
   buildSwatches();
+  // マイカラーは登録数に関わらず常に18マス(9×2)固定で高さが一定。先に空グリッドを
+  // 同期描画して高さを確保しておき、storage 読込後の再描画でポップアップの高さが
+  // 変わって「表示された瞬間にガタつく」のを防ぐ（読込後も同じ18マスで高さは不変）。
+  buildMyPalette();
   await loadCustomColors();
   buildMyPalette();
 
