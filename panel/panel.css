@@ -106,14 +106,6 @@ body {
   gap: 6px;
 }
 
-/* 操作グループ（コピー/画像・入出力・破壊的）の区切り */
-.mm-actions-sep {
-  width: 1px;
-  align-self: stretch;
-  margin: 2px 2px;
-  background: var(--line);
-}
-
 .mm-tool {
   display: inline-flex;
   align-items: center;
@@ -264,6 +256,11 @@ body {
   font-size: 12px;
   font-weight: 600;
   color: var(--muted);
+}
+
+/* セレクタ行ではコピーボタンを右端へ寄せ、出力形式行の入出力ボタンと縦に揃える */
+.mm-opt-row .mm-segmented + .mm-tool {
+  margin-left: auto;
 }
 
 /* エクスポート形式などのセレクト */

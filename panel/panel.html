@@ -23,36 +23,14 @@
         <span class="mm-switch" aria-hidden="true"></span>
       </label>
 
-      <!-- 一覧の操作（アイコンに集約して横幅を抑える） -->
+      <!-- 一覧全体の操作（画像の一括保存・全クリア） -->
       <div class="mm-actions" role="group" aria-label="マーカー一覧の操作">
-        <button type="button" id="mm-copy-all" class="mm-tool" title="全セレクタをコピー" aria-label="全セレクタをコピー">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-        </button>
         <button type="button" id="mm-shot-all" class="mm-tool" title="表示中の全マーカーの画像をまとめて保存" aria-label="全マーカーの画像を保存">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
             <circle cx="12" cy="13" r="4" />
           </svg>
         </button>
-        <span class="mm-actions-sep" aria-hidden="true"></span>
-        <button type="button" id="mm-export" class="mm-tool" title="選択した形式でマーカー一覧を保存（エクスポート）" aria-label="エクスポート">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="7 10 12 15 17 10" />
-            <line x1="12" y1="15" x2="12" y2="3" />
-          </svg>
-        </button>
-        <button type="button" id="mm-import" class="mm-tool" title="JSONファイルからマーカー一覧を復元（インポート）" aria-label="インポート">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
-        </button>
-        <span class="mm-actions-sep" aria-hidden="true"></span>
         <button type="button" id="mm-clear-all" class="mm-tool mm-tool-danger" title="すべてクリア" aria-label="すべてクリア">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="3 6 5 6 21 6" />
@@ -64,7 +42,7 @@
       <!-- マーカー一覧ファイル選択用の隠し input -->
       <input type="file" id="mm-import-file" accept="application/json,.json" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" />
 
-      <!-- 表示・出力の設定をまとめる -->
+      <!-- 表示・出力の設定と、それに対応する操作（コピー／入出力）をまとめる -->
       <div class="mm-options">
         <div class="mm-opt-row">
           <span class="mm-opt-label">セレクタ</span>
@@ -72,6 +50,12 @@
             <button type="button" data-value="css" class="is-active">CSS</button>
             <button type="button" data-value="xpath">XPath</button>
           </div>
+          <button type="button" id="mm-copy-all" class="mm-tool" title="表示中の全セレクタをこの形式でコピー" aria-label="全セレクタをコピー">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          </button>
         </div>
         <div class="mm-opt-row">
           <span class="mm-opt-label">出力形式</span>
@@ -80,15 +64,31 @@
             <option value="csv">CSV</option>
             <option value="md">Markdown</option>
           </select>
+          <button type="button" id="mm-export" class="mm-tool" title="選択した形式でマーカー一覧を保存（エクスポート）" aria-label="エクスポート">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </button>
+          <button type="button" id="mm-import" class="mm-tool" title="JSONファイルからマーカー一覧を復元（インポート）" aria-label="インポート">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+          </button>
         </div>
-        <label class="mm-shot-opt" title="各マーカーの既定値。行ごとの「マーカー込み」で個別に上書きできる">
-          <input type="checkbox" id="mm-shot-marks" />
-          <span>スクショに枠・連番ラベルを含める（既定）</span>
-        </label>
       </div>
 
       <!-- マーカーの絞り込み（タグ・セレクタ・テキスト・メモを対象） -->
       <input type="search" id="mm-filter" class="mm-filter" placeholder="絞り込み（タグ・セレクタ・テキスト・メモ）" aria-label="マーカーを絞り込み" />
+
+      <!-- スクショの既定設定（絞り込みの下。各行の「マーカー込み」で個別上書き可） -->
+      <label class="mm-shot-opt" title="各マーカーの既定値。行ごとの「マーカー込み」で個別に上書きできる">
+        <input type="checkbox" id="mm-shot-marks" />
+        <span>スクショに枠・連番ラベルを含める（既定）</span>
+      </label>
     </header>
 
     <p id="mm-empty" class="mm-empty">
