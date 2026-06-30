@@ -382,6 +382,29 @@ body {
   margin-top: 8px;
 }
 
+/* スクリーンショット関連（マーカー込み・画像保存・画像コピー）を1つの帯にまとめる */
+.mm-shot-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f4f0ed;
+}
+
+.mm-shot-group-icon {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--muted);
+}
+
+/* 帯の上では画像ボタンの面を白くして押せるボタンらしく見せる */
+.mm-shot-group .mm-act {
+  background: var(--surface);
+}
+
 /* 行ごとの「マーカー込み」上書きチェック */
 .mm-shot-incl {
   display: inline-flex;
