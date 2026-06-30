@@ -27,6 +27,35 @@ chrome.runtime.onStartup.addListener(allowSessionStorageForContent);
 // サービスワーカー起動時にも一度設定しておく（onStartup が来ない再起動に備える）
 allowSessionStorageForContent();
 
+// ツールバーアイコンにマーク件数のバッジを表示する。
+// バッジはタブ単位で設定するため、通知元タブ（sender.tab.id）にだけ反映する。
+// テーマカラー（赤）を一度だけ設定しておく。
+function setupBadgeStyle() {
+  try {
+    chrome.action?.setBadgeBackgroundColor?.({ color: "#ff3b30" });
+    chrome.action?.setBadgeTextColor?.({ color: "#ffffff" });
+  } catch (err) {
+    console.debug("[Marker:HELPER] setupBadgeStyle:", err);
+  }
+}
+chrome.runtime.onInstalled.addListener(setupBadgeStyle);
+chrome.runtime.onStartup.addListener(setupBadgeStyle);
+setupBadgeStyle();
+
+function updateBadge(tabId, count) {
+  if (tabId == null) return;
+  const text = count > 0 ? String(count) : "";
+  chrome.action?.setBadgeText?.({ tabId, text }, () => void chrome.runtime.lastError);
+}
+
+// content からのマーク更新通知を受け、件数をアイコンバッジへ反映する。
+// panel/popup も同じ通知を受け取るが、それぞれ自前の判定で取捨選択するため影響しない。
+chrome.runtime.onMessage.addListener((msg, sender) => {
+  if (msg?.type === "MM_MARKS_UPDATED" && sender.tab?.id != null) {
+    updateBadge(sender.tab.id, Array.isArray(msg.marks) ? msg.marks.length : 0);
+  }
+});
+
 // キーボードショートカットを content へ転送する。
 // マーキングモードの切替（content が enabled の唯一の保持者）と、
 // 次/前のマーカーへのスクロール移動をアクティブタブの content に伝える。
