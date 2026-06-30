@@ -1167,8 +1167,158 @@ async function copyImage(mark, clean) {
   }
 }
 
+// ---- 注釈付きレポート出力（HTML / 印刷で PDF 化） ----------------------
+// 表示中の全マーカーを、番号・グループ・セレクタ・メモ・スクショ込みの自己完結 HTML に
+// まとめて保存する。外部依存は持たず、PDF はブラウザの印刷（PDFで保存）で得る想定。
+
+// Blob を dataURL 文字列にする（レポートへ画像を埋め込むため）。
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(new Error("read"));
+    r.readAsDataURL(blob);
+  });
+}
+
+// レポートに差し込む値の HTML エスケープ（ページ由来テキストの混入に備える）。
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (c) => {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
+// マーク1件分のカード HTML。img は埋め込み用 dataURL（無ければ「画像なし」）。
+function reportCard(mark, img) {
+  const group = mark.group ? `<span class="grp">${escapeHtml(mark.group)}</span>` : "";
+  const detached = mark.detached ? `<span class="det">消失</span>` : "";
+  const note = mark.note ? `<p class="note">${escapeHtml(mark.note)}</p>` : "";
+  const text = mark.text ? `<p class="txt">${escapeHtml(mark.text)}</p>` : "";
+  const xpath = mark.xpath ? `<dt>XPath</dt><dd><code>${escapeHtml(mark.xpath)}</code></dd>` : "";
+  const figure = img
+    ? `<img src="${img}" alt="#${mark.label} のスクリーンショット" />`
+    : `<p class="noimg">画像なし</p>`;
+  return `
+    <article class="card">
+      <div class="head">
+        <span class="num" style="background:${escapeHtml(mark.color)}">${mark.label}</span>
+        ${group}
+        <span class="tag">${escapeHtml(mark.tag)}</span>
+        ${detached}
+      </div>
+      ${note}
+      ${text}
+      <dl class="sel">
+        <dt>CSS</dt><dd><code>${escapeHtml(mark.selector)}</code></dd>
+        ${xpath}
+      </dl>
+      <div class="shot">${figure}</div>
+    </article>`;
+}
+
+// レポート全体の HTML を組み立てる。スタイルはインラインで自己完結させ、
+// 画面では一覧、印刷時は各カードを途中で割らないよう page-break を効かせる。
+function buildReportHtml(items, meta) {
+  const cards = items.map(({ mark, img }) => reportCard(mark, img)).join("\n");
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeHtml(meta.title)}</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px; background: #f5f3f1; color: #1d1b1a;
+    font-family: -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; }
+  .rpt-head { max-width: 900px; margin: 0 auto 16px; }
+  .rpt-head h1 { font-size: 20px; margin: 0 0 4px; }
+  .rpt-head p { margin: 2px 0; color: #6b635e; font-size: 13px; word-break: break-all; }
+  .rpt-head .src { font-size: 13px; }
+  .printbtn { margin-top: 10px; padding: 8px 14px; border: 1px solid #d8d2cd; border-radius: 8px;
+    background: #fff; color: #1d1b1a; font: inherit; font-weight: 600; cursor: pointer; }
+  .printbtn:hover { border-color: #ff3b30; color: #ff3b30; }
+  .cards { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  .card { background: #fff; border: 1px solid #ece7e3; border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(20,14,10,0.05); }
+  .head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .num { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; color: #fff;
+    font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .grp { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px;
+    color: #5a463f; background: #efe7e2; }
+  .tag { font-size: 13px; font-weight: 600; word-break: break-all; }
+  .det { font-size: 10px; font-weight: 700; color: #b25000; background: #ff950022; padding: 1px 6px; border-radius: 6px; }
+  .note { margin: 4px 0; font-size: 13px; }
+  .txt { margin: 4px 0; font-size: 12px; color: #6b635e; }
+  .sel { margin: 8px 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; }
+  .sel dt { color: #6b635e; font-size: 11px; font-weight: 700; }
+  .sel dd { margin: 0; }
+  .sel code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11.5px; word-break: break-all; }
+  .shot { margin-top: 8px; }
+  .shot img { max-width: 100%; height: auto; border: 1px solid #ece7e3; border-radius: 8px; display: block; }
+  .noimg { font-size: 12px; color: #9a928c; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .noprint { display: none !important; }
+    .card { break-inside: avoid; page-break-inside: avoid; box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+  <header class="rpt-head">
+    <h1>${escapeHtml(meta.title)}</h1>
+    ${meta.url ? `<p class="src">${escapeHtml(meta.url)}</p>` : ""}
+    <p>${escapeHtml(meta.date)} ・ ${items.length}件</p>
+    <button type="button" class="printbtn noprint" onclick="window.print()">印刷 / PDFで保存</button>
+  </header>
+  <div class="cards">
+${cards}
+  </div>
+</body>
+</html>`;
+}
+
+// 表示中（絞り込み後）の全マーカーを撮影しながら HTML レポートを生成して保存する。
+async function generateReport() {
+  if (activeTabId == null) {
+    showToast("このページでは利用できません");
+    return;
+  }
+  const list = currentMarks.filter(matchesFilter);
+  if (list.length === 0) {
+    showToast("レポートにするマーカーがありません");
+    return;
+  }
+  // ページURLを取得（撮影前に1回）。全画像保存と同じく状態から hideIds を求める。
+  const ex = await sendToTab({ type: "MM_EXPORT_MARKS" });
+  const url = (ex && ex.url) || "";
+  const hideIds = hideIdsFromState();
+  showToast(`${list.length}件のレポートを作成しています…`);
+  const items = [];
+  for (const mark of list) {
+    let img = null;
+    if (!mark.detached) {
+      const res = await captureMarkBlob(mark, !shotInclOf(mark.id), hideIds);
+      if (res.ok) {
+        try {
+          img = await blobToDataUrl(res.blob);
+        } catch {
+          img = null;
+        }
+      }
+    }
+    items.push({ mark, img });
+    // 撮影間の描画安定・captureVisibleTab のスロットリング回避
+    await delay(200);
+  }
+  const meta = { title: "Marker:HELPER レポート", url, date: new Date().toLocaleString("ja-JP") };
+  downloadText(buildReportHtml(items, meta), `marker-helper-report-${nowStamp()}.html`, "text/html");
+  showToast(`${items.length}件のレポートを保存しました`);
+}
+
 const importFileEl = document.getElementById("mm-import-file");
 document.getElementById("mm-shot-all").addEventListener("click", saveAllImages);
+document.getElementById("mm-report").addEventListener("click", generateReport);
 document.getElementById("mm-export").addEventListener("click", exportMarks);
 document.getElementById("mm-import").addEventListener("click", () => importFileEl.click());
 importFileEl.addEventListener("change", () => {
