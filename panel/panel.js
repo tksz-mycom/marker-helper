@@ -644,13 +644,24 @@ function excludedMarkIds() {
   return ids;
 }
 
-async function captureMarkBlob(mark, clean) {
+// マークの「マーカー込み」実効値（行の上書き優先、無ければヘッダー既定）。
+// 絞り込みで DOM に無い行でも参照できるよう、状態から直接求める。
+function shotInclOf(id) {
+  return shotInclOverrides.has(id) ? shotInclOverrides.get(id) : includeMarksEl.checked;
+}
+
+// 全マークから、撮影時に枠・番号を隠す（未チェックの）id を集める。
+function hideIdsFromState() {
+  return currentMarks.filter((m) => !shotInclOf(m.id)).map((m) => m.id);
+}
+
+async function captureMarkBlob(mark, clean, hideIds = excludedMarkIds()) {
   if (activeTabId == null) return { ok: false, reason: "unsupported" };
   const prep = await sendToTab({
     type: "MM_CAPTURE_PREPARE",
     id: mark.id,
     clean,
-    hideIds: excludedMarkIds(),
+    hideIds,
   });
   if (!prep || !prep.ok) {
     return { ok: false, reason: prep?.reason || "prepare" };
@@ -675,6 +686,21 @@ function captureErrorText(reason) {
   return "画像の撮影に失敗しました";
 }
 
+// Blob を指定ファイル名でダウンロードする。
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // 対象マークの画像を PNG ファイルとして保存する。
 async function saveImage(mark, clean) {
   const res = await captureMarkBlob(mark, clean);
@@ -682,18 +708,44 @@ async function saveImage(mark, clean) {
     showToast(captureErrorText(res.reason));
     return;
   }
-  const url = URL.createObjectURL(res.blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `marker-helper-shot-${nowStamp()}-${mark.label}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  downloadBlob(res.blob, `marker-helper-shot-${nowStamp()}-${mark.label}.png`);
   showToast(`#${mark.label} の画像を保存しました`);
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 表示中（絞り込み後）の全マーカーを順に撮影し、それぞれ PNG として保存する。
+// 各行の「マーカー込み」設定を個別に反映し、写り込む他マークも状態から判定する。
+async function saveAllImages() {
+  if (activeTabId == null) {
+    showToast("このページでは利用できません");
+    return;
+  }
+  const list = currentMarks.filter(matchesFilter);
+  if (list.length === 0) {
+    showToast("保存するマーカーがありません");
+    return;
+  }
+  const hideIds = hideIdsFromState();
+  let ok = 0;
+  let fail = 0;
+  showToast(`${list.length}件の画像を保存しています…`);
+  for (const mark of list) {
+    if (mark.detached) {
+      fail++;
+      continue;
+    }
+    const res = await captureMarkBlob(mark, !shotInclOf(mark.id), hideIds);
+    if (!res.ok) {
+      fail++;
+      continue;
+    }
+    downloadBlob(res.blob, `marker-helper-shot-${nowStamp()}-${mark.label}.png`);
+    ok++;
+    // 連続ダウンロードのスロットリング・撮影間の描画安定のため少し待つ
+    await delay(300);
+  }
+  showToast(fail > 0 ? `${ok}件を保存（${fail}件は失敗/対象なし）` : `${ok}件の画像を保存しました`);
 }
 
 // 対象マークの画像をクリップボードへコピーする。
@@ -712,6 +764,7 @@ async function copyImage(mark, clean) {
 }
 
 const importFileEl = document.getElementById("mm-import-file");
+document.getElementById("mm-shot-all").addEventListener("click", saveAllImages);
 document.getElementById("mm-export").addEventListener("click", exportMarks);
 document.getElementById("mm-import").addEventListener("click", () => importFileEl.click());
 importFileEl.addEventListener("change", () => {
