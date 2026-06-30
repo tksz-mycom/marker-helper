@@ -875,6 +875,12 @@ body.mm-drop-active::after {
   font-size: 11px;
 }
 
+/* display:grid が UA の [hidden]（display:none）を上書きしてしまい、
+   未展開でも空の枠が見えてしまうため、hidden 時は明示的に隠す。 */
+.mm-inspect[hidden] {
+  display: none;
+}
+
 .mm-inspect dt {
   color: var(--muted);
   font-weight: 600;
