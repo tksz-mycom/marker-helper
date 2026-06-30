@@ -1642,12 +1642,7 @@ if (typeof module !== "undefined" && module.exports) {
     moveItem,
     moveItemToEdge,
     updateMoveBoundaries,
-    commitOrder,
-    relabelDom,
     __test: {
-      setActiveTabId: (id) => {
-        activeTabId = id;
-      },
       resetReorder: () => reorderCtl.reset(),
     },
   };

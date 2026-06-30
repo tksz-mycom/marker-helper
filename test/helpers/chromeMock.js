@@ -64,4 +64,4 @@ function installChromeMock() {
   return { emitMessage: (msg, sender) => onMessage.emit(msg, sender || {}, () => {}) };
 }
 
-module.exports = { installChromeMock, memStore };
+module.exports = { installChromeMock };
