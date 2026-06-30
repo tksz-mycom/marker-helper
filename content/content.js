@@ -232,7 +232,7 @@
       }
       const r = padRect(mark.el.getBoundingClientRect(), mark.padding);
       mark.box.style.display = "block";
-      mark.badge.style.display = mark.showLabel ? "flex" : "none";
+      mark.badge.style.display = (mark.showLabel ?? state.showLabel) ? "flex" : "none";
       applyRect(mark.box, r);
       // バッジの中心を（余白を含めた）枠の指定角に合わせる。
       // 後段の translate(-50%,-50%) はバッジ自身のサイズ基準で半分戻すため、
@@ -433,9 +433,10 @@
       padding: st.padding,
       radius: st.radius,
       transparency: st.transparency,
-      // 連番バッジの表示はマークごとに保持する（枠スタイル同様の個別設定）。
-      // 明示値が無ければ現在のグローバル既定（state.showLabel）を引き継ぐ。
-      showLabel: typeof st.showLabel === "boolean" ? st.showLabel : state.showLabel,
+      // 連番バッジの表示はマークごとに3状態で保持する: true=常に表示 / false=常に非表示 /
+      // null=グローバル既定(state.showLabel)を継承。明示値の無い新規・旧データは継承(null)とし、
+      // 実効値は毎描画で動的評価する（旧データに既定値を焼き込まない）。
+      showLabel: typeof st.showLabel === "boolean" ? st.showLabel : null,
       el,
       box,
       badge,
@@ -987,6 +988,7 @@
       chrome.runtime.sendMessage({
         type: "MM_MARKS_UPDATED",
         enabled: state.enabled,
+        showLabel: state.showLabel,
         marks: serializeMarks(),
       });
     } catch {
@@ -1036,11 +1038,11 @@
   // グローバルの連番表示トグル（popup）。新規マークの既定値を更新しつつ、
   // 既存の全マークの個別設定も一括で揃える（全表示/全非表示の一括操作として機能）。
   function setShowLabel(show) {
+    // グローバル既定のみ更新する。各マークの個別設定(true/false)はそのまま尊重し、
+    // 継承(null)のマークだけがこの既定に追従する（個別設定を一括上書きしない）。
     state.showLabel = Boolean(show);
-    for (const mark of state.marks) mark.showLabel = state.showLabel;
     syncPositions();
     broadcast();
-    scheduleAutosave();
   }
 
   // 既存マークの連番表示だけを個別に変更する（グローバル既定 state.showLabel は不変）。

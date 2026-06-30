@@ -510,7 +510,8 @@ function wireStyleEditor(node, mark) {
   // 連番ラベルの表示/非表示はマークごとに切り替える。枠スタイル（MM_SET_MARK_STYLE）
   // とは別管理のため専用メッセージ MM_SET_MARK_LABEL で送る。
   const showLabelEl = pop.querySelector(".mm-style-showlabel");
-  showLabelEl.checked = mark.showLabel !== false;
+  // 継承(null)のときはグローバル既定の実効値を表示。チェック操作で明示的な上書きになる。
+  showLabelEl.checked = (mark.showLabel ?? globalShowLabel) === true;
   showLabelEl.addEventListener("change", () => {
     suppressAnimOnce = true;
     sendToTab({ type: "MM_SET_MARK_LABEL", id: mark.id, show: showLabelEl.checked });
@@ -653,6 +654,8 @@ function buildItem(mark) {
 let currentMarks = [];
 // 並べ替え直後の再描画ではフェードイン（点滅）を1回だけ抑制する
 let suppressAnimOnce = false;
+// content の state.showLabel（連番表示のグローバル既定）。継承(null)マークの実効表示判定に使う。
+let globalShowLabel = false;
 // ドラッグ中は再描画を抑止し、掴んでいる要素が破棄されないようにする
 let isDragging = false;
 // 枠の詳細設定（吹き出し）が開いている行の id。再描画をまたいで開いたままにする。
@@ -664,7 +667,7 @@ let prevShownIds = new Set();
 function render(marks) {
   // ドラッグ操作中の再描画は掴んだ要素を消してしまうため抑止する。
   // ドラッグ確定後は commitOrder の更新通知で改めて描画される。
-  if (isDragging) return;
+  if (isDragging || isReordering) return;
   currentMarks = marks || [];
   // 一覧から消えたマークの上書き状態は破棄する（id の使い回しによる誤適用を防ぐ）
   const liveIds = new Set(currentMarks.map((m) => m.id));
@@ -737,7 +740,8 @@ function commitOrder() {
 
 // 上下移動ボタンによる並べ替え。ドラッグの代替として隣接行と入れ替え、表示番号を
 // 調整する。枠が大きくてもクリック1回で確実に動かせる。
-let pendingMoveCommit = null;
+let isReordering = false;
+let reorderSyncTimer = null;
 
 // DOM の並べ替えを FLIP でスライド表示する共通処理。mutate() で実際の DOM 入替を行い、
 // 並びが変わったら true を返す。旧位置→新位置へ全行を translateY で滑らかに動かす。
@@ -762,12 +766,16 @@ function animateReorder(mutate) {
     }
   });
 
-  // 連続クリックに備え、スライドが終わってからまとめて確定する
-  // （commitOrder→再描画でノードが作り直されアニメが途切れるのを防ぐ）。
-  if (pendingMoveCommit) clearTimeout(pendingMoveCommit);
-  pendingMoveCommit = setTimeout(() => {
-    pendingMoveCommit = null;
-    commitOrder();
+  // 並びは「今この瞬間」新順なので即座に確定する（旧DOMを後から読む競合を避ける）。
+  // アニメ中は render() を抑止してスライドの中断を防ぎ、終了後に権威状態へ同期する。
+  isReordering = true;
+  commitOrder();
+  if (reorderSyncTimer) clearTimeout(reorderSyncTimer);
+  reorderSyncTimer = setTimeout(() => {
+    reorderSyncTimer = null;
+    isReordering = false;
+    suppressAnimOnce = true;
+    reload(true); // 抑止中に取りこぼした他更新も含め権威状態へ再同期（アニメは抑止）
   }, 220);
 }
 
@@ -858,7 +866,7 @@ listEl.addEventListener("dragend", () => {
 
 let reloading = false;
 let reloadQueued = false;
-async function reload() {
+async function reload(keepAnim = false) {
   // 実行中に届いた要求は1回だけ末尾で再実行する（タブ切替連打の多重実行を防ぐ）
   if (reloading) {
     reloadQueued = true;
@@ -866,7 +874,8 @@ async function reload() {
   }
   reloading = true;
   // タブ切替・再読み込み由来の描画では並べ替えのアニメ抑制を持ち越さない
-  suppressAnimOnce = false;
+  // （ただし並べ替え直後の再同期では keepAnim=true で抑止を維持し、ちらつきを防ぐ）
+  if (!keepAnim) suppressAnimOnce = false;
   try {
     const ok = await resolveActiveTab();
     if (!ok) {
@@ -876,6 +885,7 @@ async function reload() {
       return;
     }
     const state = await sendToTab({ type: "MM_GET_STATE" });
+    globalShowLabel = Boolean(state?.showLabel);
     enabledEl.disabled = false;
     enabledEl.checked = Boolean(state?.enabled);
     render(state?.marks ?? []);
@@ -1601,6 +1611,8 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg?.type === "MM_MARKS_UPDATED" && sender.tab?.id === activeTabId) {
     // ポップアップ側のトグル操作などで変わった enabled をパネルへ反映する
     if (typeof msg.enabled === "boolean") enabledEl.checked = msg.enabled;
+    // 連番表示のグローバル既定も同期し、継承マークの実効表示判定を最新化する
+    if (typeof msg.showLabel === "boolean") globalShowLabel = msg.showLabel;
     render(msg.marks);
   }
 });
