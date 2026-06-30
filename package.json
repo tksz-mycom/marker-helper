@@ -6,9 +6,12 @@
   "description": "開発・テスト専用のメタデータ。拡張機能本体はビルドレスの素のJSで、この package.json は出荷物に影響しない（テストツールのためだけに存在する）。",
   "scripts": {
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "jsdom": "^25.0.1",
     "vitest": "^2.1.9"
   }
 }

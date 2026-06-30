@@ -21,6 +21,12 @@
       shouldSkipRender: function () {
         return reordering;
       },
+      // テスト用: 保留中のタイマを取り消し状態を初期化する（本番では未使用）
+      reset: function () {
+        if (timer !== null) cancel(timer);
+        timer = null;
+        reordering = false;
+      },
       // 並べ替え直後に呼ぶ。即時 commit し、delay 後に再同期する。
       onMove: function () {
         reordering = true;

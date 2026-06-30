@@ -1634,6 +1634,25 @@ chrome.windows?.onFocusChanged?.addListener(async (winId) => {
   reload();
 });
 
-loadShotMarks();
-loadSelectorFormat();
-reload();
+// テスト用フック: Node(jsdom)では自動起動せず内部関数を公開する。
+// ブラウザ実行時(module 未定義)は従来どおりブートストラップする。
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    render,
+    moveItem,
+    moveItemToEdge,
+    updateMoveBoundaries,
+    commitOrder,
+    relabelDom,
+    __test: {
+      setActiveTabId: (id) => {
+        activeTabId = id;
+      },
+      resetReorder: () => reorderCtl.reset(),
+    },
+  };
+} else {
+  loadShotMarks();
+  loadSelectorFormat();
+  reload();
+}

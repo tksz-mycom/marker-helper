@@ -1,6 +1,5 @@
-// 将来の層2(jsdom)テスト用の chrome.* 最小モック。
-// 現在の純粋ロジックテスト（層1）では未使用だが、メッセージ往復やストレージを
-// 伴う panel/content のテストを書くときの土台として用意しておく。
+// 層2(jsdom)テスト用の chrome.* 最小モック。panel.js / content.js が読み込み時に
+// 触れる API（onMessage/onActivated/onUpdated/windows、storage）を一通り用意する。
 "use strict";
 
 function memStore() {
@@ -13,7 +12,7 @@ function memStore() {
           : Array.isArray(keys)
             ? Object.fromEntries(keys.map((k) => [k, data[k]]))
             : { ...data };
-      cb(out);
+      cb && cb(out);
     },
     set: (obj, cb) => {
       Object.assign(data, obj);
@@ -26,19 +25,43 @@ function memStore() {
   };
 }
 
+function evt() {
+  const ls = [];
+  return { addListener: (f) => ls.push(f), emit: (...a) => ls.forEach((f) => f(...a)) };
+}
+
+// globalThis.chrome を組み立てて返す。emitMessage で onMessage ハンドラへ流し込める。
 function installChromeMock() {
-  const listeners = [];
+  const onMessage = evt();
   globalThis.chrome = {
     runtime: {
       sendMessage: () => {},
-      onMessage: { addListener: (f) => listeners.push(f) },
+      onMessage: { addListener: onMessage.addListener },
       lastError: null,
+      getURL: (p) => p,
+      id: "test-ext",
     },
-    tabs: { sendMessage: () => {}, query: () => {} },
+    tabs: {
+      sendMessage: (id, msg, cb) => {
+        if (typeof cb === "function") cb(null);
+      },
+      query: (q, cb) => {
+        const r = [];
+        return cb ? cb(r) : Promise.resolve(r);
+      },
+      onActivated: { addListener: () => {} },
+      onUpdated: { addListener: () => {} },
+      captureVisibleTab: () => Promise.resolve(""),
+    },
     storage: { local: memStore(), session: memStore() },
+    windows: {
+      onFocusChanged: { addListener: () => {} },
+      WINDOW_ID_NONE: -1,
+      get: () => Promise.resolve({ type: "normal" }),
+      getLastFocused: () => Promise.resolve({ id: 1 }),
+    },
   };
-  // テストから content/panel の onMessage ハンドラへメッセージを流し込むための補助
-  return { emit: (msg, sender) => listeners.forEach((f) => f(msg, sender || {}, () => {})) };
+  return { emitMessage: (msg, sender) => onMessage.emit(msg, sender || {}, () => {}) };
 }
 
 module.exports = { installChromeMock, memStore };
