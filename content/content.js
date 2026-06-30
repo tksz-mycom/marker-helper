@@ -99,6 +99,9 @@
 
   let root = null;
   let hoverBox = null;
+  // 撮影中はマーキングモードのホバー強調枠を一時的に抑止する（スクショへの写り込み防止）。
+  // state.enabled 自体は変えないため popup のトグル状態には影響しない。
+  let capturing = false;
 
   function ensureOverlay() {
     if (root && document.documentElement.contains(root)) return;
@@ -156,7 +159,7 @@
     if (!root) return;
 
     // ホバー枠（現在の余白設定を反映）
-    if (state.enabled && state.hoverTarget && document.contains(state.hoverTarget)) {
+    if (state.enabled && !capturing && state.hoverTarget && document.contains(state.hoverTarget)) {
       const r = padRect(state.hoverTarget.getBoundingClientRect(), state.style.padding);
       hoverBox.style.display = "block";
       applyRect(hoverBox, r);
@@ -438,6 +441,8 @@
     }
     // 対象をビューポート中央へ（撮影のため瞬時にスクロール。smooth は使わない）
     mark.el.scrollIntoView({ block: "center", inline: "center" });
+    // 撮影中はホバー強調枠を抑止する（マーキングモードのオーバーレイ写り込み防止）
+    capturing = true;
     // 直前の撮影で隠した要素が残っていれば先に復帰してから隠し直す
     restoreHidden();
     // 未チェック（hideIds に列挙）のマークだけ枠・番号を隠す。後方互換として
@@ -507,6 +512,8 @@
     clearTimeout(captureRestoreTimer);
     captureRestoreTimer = null;
     restoreHidden();
+    // ホバー強調枠の抑止を解除（次フレームの syncPositions で必要なら再表示）
+    capturing = false;
   }
 
   // ---- 状態の直列化と通知 ----------------------------------------------
