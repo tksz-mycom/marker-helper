@@ -506,6 +506,15 @@ function wireStyleEditor(node, mark) {
   bindNum(".mm-style-padding", ".mm-style-padding-num", "padding", mark.padding);
   bindNum(".mm-style-radius", ".mm-style-radius-num", "radius", mark.radius);
   bindNum(".mm-style-transparency", ".mm-style-transparency-num", "transparency", mark.transparency);
+
+  // 連番ラベルの表示/非表示はマークごとに切り替える。枠スタイル（MM_SET_MARK_STYLE）
+  // とは別管理のため専用メッセージ MM_SET_MARK_LABEL で送る。
+  const showLabelEl = pop.querySelector(".mm-style-showlabel");
+  showLabelEl.checked = mark.showLabel !== false;
+  showLabelEl.addEventListener("change", () => {
+    suppressAnimOnce = true;
+    sendToTab({ type: "MM_SET_MARK_LABEL", id: mark.id, show: showLabelEl.checked });
+  });
 }
 
 function buildItem(mark) {
@@ -523,6 +532,15 @@ function buildItem(mark) {
 
   badge.textContent = String(mark.label);
   badge.style.background = mark.color;
+  // 連番ラベルを個別に非表示へ設定したマークは、一覧の番号バッジにも斜線を引いて
+  // 「ページ上に番号が出ない」状態だと一目で分かるようにする。
+  const labelHidden = mark.showLabel === false;
+  badge.classList.toggle("is-label-off", labelHidden);
+  // ドラッグの代替: 上下ボタンで並び順を調整する（端ボタンは最上段／最下段へ一気に移動）
+  node.querySelector(".mm-act-move-top").addEventListener("click", () => moveItemToEdge(node, -1));
+  node.querySelector(".mm-act-move-up").addEventListener("click", () => moveItem(node, -1));
+  node.querySelector(".mm-act-move-down").addEventListener("click", () => moveItem(node, 1));
+  node.querySelector(".mm-act-move-bottom").addEventListener("click", () => moveItemToEdge(node, 1));
   tag.textContent = mark.tag;
   // セレクタ文字列は直接編集できる。確定でその文字列により要素を貼り替える。
   setupSelectorEdit(selector, mark);
@@ -639,6 +657,9 @@ let suppressAnimOnce = false;
 let isDragging = false;
 // 枠の詳細設定（吹き出し）が開いている行の id。再描画をまたいで開いたままにする。
 let openStyleEditId = null;
+// 前回の再描画で表示していたマークの id 集合。今回新たに現れた項目だけに
+// スライドアップ演出（.mm-enter）を付け、既存項目の揺れを防ぐために使う。
+let prevShownIds = new Set();
 
 function render(marks) {
   // ドラッグ操作中の再描画は掴んだ要素を消してしまうため抑止する。
@@ -664,11 +685,22 @@ function render(marks) {
   // マークが1件も無いときの案内と、絞り込みで0件になったときの案内を出し分ける
   emptyEl.hidden = currentMarks.length !== 0;
   nomatchEl.hidden = !(currentMarks.length > 0 && shown.length === 0);
-  if (shown.length === 0) return;
+  if (shown.length === 0) {
+    prevShownIds = new Set();
+    return;
+  }
 
   const frag = document.createDocumentFragment();
-  for (const mark of shown) frag.appendChild(buildItem(mark));
+  for (const mark of shown) {
+    const node = buildItem(mark);
+    // 前回表示に無かった（＝今回新しく現れた）項目だけスライドアップさせる
+    if (!prevShownIds.has(mark.id)) node.classList.add("mm-enter");
+    frag.appendChild(node);
+  }
   listEl.appendChild(frag);
+  prevShownIds = new Set(shown.map((m) => m.id));
+  // 先頭/末尾の移動ボタンや絞り込み中の無効化を反映する
+  updateMoveBoundaries();
 }
 
 // ---- ドラッグ並べ替え -------------------------------------------------
@@ -703,6 +735,86 @@ function commitOrder() {
   sendToTab({ type: "MM_REORDER_MARKS", ids });
 }
 
+// 上下移動ボタンによる並べ替え。ドラッグの代替として隣接行と入れ替え、表示番号を
+// 調整する。枠が大きくてもクリック1回で確実に動かせる。
+let pendingMoveCommit = null;
+
+// DOM の並べ替えを FLIP でスライド表示する共通処理。mutate() で実際の DOM 入替を行い、
+// 並びが変わったら true を返す。旧位置→新位置へ全行を translateY で滑らかに動かす。
+function animateReorder(mutate) {
+  if (filterText || isDragging) return;
+  const rows = [...listEl.querySelectorAll(".mm-item")];
+  const firstTops = new Map(rows.map((el) => [el, el.getBoundingClientRect().top]));
+  if (!mutate()) return; // 端で動かせない等、並びが変わらなければ何もしない
+  relabelDom();
+  updateMoveBoundaries();
+  for (const el of rows) {
+    const delta = firstTops.get(el) - el.getBoundingClientRect().top;
+    if (!delta) continue;
+    el.style.transition = "none";
+    el.style.transform = `translateY(${delta}px)`;
+  }
+  requestAnimationFrame(() => {
+    for (const el of rows) {
+      if (!el.style.transform) continue;
+      el.style.transition = "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
+      el.style.transform = "";
+    }
+  });
+
+  // 連続クリックに備え、スライドが終わってからまとめて確定する
+  // （commitOrder→再描画でノードが作り直されアニメが途切れるのを防ぐ）。
+  if (pendingMoveCommit) clearTimeout(pendingMoveCommit);
+  pendingMoveCommit = setTimeout(() => {
+    pendingMoveCommit = null;
+    commitOrder();
+  }, 220);
+}
+
+// 隣の行と入れ替える（1つ上／1つ下）
+function moveItem(li, dir) {
+  animateReorder(() => {
+    const target = dir < 0 ? li.previousElementSibling : li.nextElementSibling;
+    if (!target || !target.classList.contains("mm-item")) return false;
+    if (dir < 0) listEl.insertBefore(li, target);
+    else listEl.insertBefore(target, li);
+    return true;
+  });
+}
+
+// 一覧の端まで一気に移動する（最上段／最下段）
+function moveItemToEdge(li, dir) {
+  animateReorder(() => {
+    if (dir < 0) {
+      if (listEl.firstElementChild === li) return false;
+      listEl.insertBefore(li, listEl.firstElementChild);
+    } else {
+      if (listEl.lastElementChild === li) return false;
+      listEl.appendChild(li);
+    }
+    return true;
+  });
+}
+
+// 先頭の「上系」・末尾の「下系」ボタンは押せないようにする（絞り込み中は両方無効）。
+function updateMoveBoundaries() {
+  const rows = [...listEl.querySelectorAll(".mm-item")];
+  const lock = Boolean(filterText);
+  const last = rows.length - 1;
+  rows.forEach((li, i) => {
+    const atTop = i === 0;
+    const atBottom = i === last;
+    for (const sel of [".mm-act-move-top", ".mm-act-move-up"]) {
+      const btn = li.querySelector(sel);
+      if (btn) btn.disabled = lock || atTop;
+    }
+    for (const sel of [".mm-act-move-down", ".mm-act-move-bottom"]) {
+      const btn = li.querySelector(sel);
+      if (btn) btn.disabled = lock || atBottom;
+    }
+  });
+}
+
 listEl.addEventListener("dragstart", (e) => {
   const li = e.target.closest(".mm-item");
   if (!li) return;
@@ -722,8 +834,14 @@ listEl.addEventListener("dragover", (e) => {
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
   const after = getDragAfterElement(e.clientY);
-  if (after == null) listEl.appendChild(dragging);
-  else listEl.insertBefore(dragging, after);
+  // 既に正しい位置にあるなら DOM を動かさない。毎 dragover で無条件に再挿入すると、
+  // 掴んだ要素がリスト内で場所を占めたまま測定される影響で挿入位置が境界付近で
+  // 交互に振動し、カードが細かく揺れてしまうため。
+  if (after == null) {
+    if (listEl.lastElementChild !== dragging) listEl.appendChild(dragging);
+  } else if (after !== dragging && after.previousElementSibling !== dragging) {
+    listEl.insertBefore(dragging, after);
+  }
 });
 
 listEl.addEventListener("drop", (e) => {

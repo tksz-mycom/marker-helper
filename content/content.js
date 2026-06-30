@@ -232,7 +232,7 @@
       }
       const r = padRect(mark.el.getBoundingClientRect(), mark.padding);
       mark.box.style.display = "block";
-      mark.badge.style.display = state.showLabel ? "flex" : "none";
+      mark.badge.style.display = mark.showLabel ? "flex" : "none";
       applyRect(mark.box, r);
       // バッジの中心を（余白を含めた）枠の指定角に合わせる。
       // 後段の translate(-50%,-50%) はバッジ自身のサイズ基準で半分戻すため、
@@ -433,6 +433,9 @@
       padding: st.padding,
       radius: st.radius,
       transparency: st.transparency,
+      // 連番バッジの表示はマークごとに保持する（枠スタイル同様の個別設定）。
+      // 明示値が無ければ現在のグローバル既定（state.showLabel）を引き継ぐ。
+      showLabel: typeof st.showLabel === "boolean" ? st.showLabel : state.showLabel,
       el,
       box,
       badge,
@@ -489,8 +492,14 @@
         skipped++;
         continue;
       }
-      // スタイルは content 側の値域で検証・クランプしてから採用する
-      buildMark(el, sanitizeStyle(item, state.style), item.note, item.group);
+      // スタイルは content 側の値域で検証・クランプしてから採用する。
+      // 連番表示の個別設定（showLabel）は sanitizeStyle の対象外のため別途引き継ぐ。
+      buildMark(
+        el,
+        { ...sanitizeStyle(item, state.style), showLabel: item.showLabel },
+        item.note,
+        item.group,
+      );
       restored++;
     }
 
@@ -946,6 +955,7 @@
       padding: m.padding,
       radius: m.radius,
       transparency: m.transparency,
+      showLabel: m.showLabel,
       detached: !document.contains(m.el),
     }));
   }
@@ -967,6 +977,7 @@
       padding: m.padding,
       radius: m.radius,
       transparency: m.transparency,
+      showLabel: m.showLabel,
       detached: !document.contains(m.el),
     }));
   }
@@ -1022,9 +1033,24 @@
     broadcast();
   }
 
+  // グローバルの連番表示トグル（popup）。新規マークの既定値を更新しつつ、
+  // 既存の全マークの個別設定も一括で揃える（全表示/全非表示の一括操作として機能）。
   function setShowLabel(show) {
     state.showLabel = Boolean(show);
+    for (const mark of state.marks) mark.showLabel = state.showLabel;
     syncPositions();
+    broadcast();
+    scheduleAutosave();
+  }
+
+  // 既存マークの連番表示だけを個別に変更する（グローバル既定 state.showLabel は不変）。
+  function setMarkLabel(id, show) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return;
+    mark.showLabel = Boolean(show);
+    syncPositions();
+    broadcast();
+    scheduleAutosave();
   }
 
   function setLabelPos(pos) {
@@ -1095,6 +1121,10 @@
         break;
       case "MM_SET_MARK_STYLE":
         setMarkStyle(msg.id, msg.patch);
+        sendResponse({ ok: true });
+        break;
+      case "MM_SET_MARK_LABEL":
+        setMarkLabel(msg.id, msg.show);
         sendResponse({ ok: true });
         break;
       case "MM_SET_SELECTOR":
