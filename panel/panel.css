@@ -822,6 +822,43 @@ body.mm-drop-active::after {
   pointer-events: none;
 }
 
+/* 要素インスペクト情報。ラベル列＋値列の 2 カラムでコンパクトに並べる */
+.mm-inspect {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 11px;
+}
+
+.mm-inspect dt {
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mm-inspect dd {
+  margin: 0;
+  color: var(--text);
+  word-break: break-all;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* 色見本のスウォッチ（文字色・背景色の行） */
+.mm-swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
 /* 要素の中身をコピーするボタン群（テキスト/HTML）。小さく控えめに並べる */
 .mm-content-copy {
   display: flex;

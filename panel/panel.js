@@ -247,6 +247,46 @@ async function copyElementContent(mark, kind) {
   showToast(ok ? `#${mark.label} の${kindLabel}をコピーしました` : "コピーに失敗しました");
 }
 
+// インスペクト情報を <dl> に行（dt/dd）として描画する。
+// コントラストは WCAG の合否目安（通常文 4.5、大きい文字 3.0）を併記する。
+function renderInspect(box, info) {
+  box.replaceChildren();
+  const row = (label, value) => {
+    if (value == null || value === "") return;
+    const dt = document.createElement("dt");
+    dt.textContent = label;
+    const dd = document.createElement("dd");
+    dd.textContent = value;
+    box.append(dt, dd);
+  };
+  row("サイズ", `${info.width} × ${info.height} px`);
+  row("表示", info.display);
+  // 文字色・背景色は見本スウォッチ付きで示す
+  appendColorRow(box, "文字色", info.color);
+  appendColorRow(box, "背景色", info.background);
+  if (info.contrast != null) {
+    const grade = info.contrast >= 4.5 ? "AA" : info.contrast >= 3 ? "AA(大)" : "不足";
+    row("コントラスト", `${info.contrast.toFixed(2)} : 1（${grade}）`);
+  }
+  row("フォント", [info.fontFamily, info.fontSize, info.fontWeight].filter(Boolean).join(" / "));
+  row("余白", `padding ${info.padding} / margin ${info.margin}`);
+  row("role", info.role);
+  row("aria-label", info.ariaLabel);
+}
+
+// 色の行は値の左に色見本（スウォッチ）を付ける
+function appendColorRow(box, label, value) {
+  if (!value) return;
+  const dt = document.createElement("dt");
+  dt.textContent = label;
+  const dd = document.createElement("dd");
+  const sw = document.createElement("span");
+  sw.className = "mm-swatch";
+  sw.style.background = value;
+  dd.append(sw, document.createTextNode(value));
+  box.append(dt, dd);
+}
+
 // セレクタ貼り替えの失敗理由（content の reason）に対応する日本語メッセージ
 const SELECTOR_ERROR = {
   empty: "セレクタが空です",
@@ -391,6 +431,25 @@ function buildItem(mark) {
 
   node.querySelector(".mm-act-locate").addEventListener("click", () => {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
+  });
+
+  // 要素のインスペクト情報を開閉する。開いたときに content から取得して描画する。
+  const inspectBtn = node.querySelector(".mm-act-inspect");
+  const inspectBox = node.querySelector(".mm-inspect");
+  inspectBtn.addEventListener("click", async () => {
+    if (!inspectBox.hidden) {
+      inspectBox.hidden = true;
+      inspectBtn.setAttribute("aria-expanded", "false");
+      return;
+    }
+    const res = await sendToTab({ type: "MM_INSPECT_ELEMENT", id: mark.id });
+    if (!res || !res.ok) {
+      showToast("対象が見つかりません（消失したマーカー）");
+      return;
+    }
+    renderInspect(inspectBox, res.info);
+    inspectBox.hidden = false;
+    inspectBtn.setAttribute("aria-expanded", "true");
   });
 
   // 要素の中身（テキスト/HTML）をコピーする。content から都度取得する（再描画は伴わない）。

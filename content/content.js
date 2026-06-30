@@ -637,6 +637,87 @@
     return { ok: true, text, html };
   }
 
+  // ---- 要素インスペクト（computed style / コントラスト比など） ----------
+  // ページDOMは読むだけ。色は getComputedStyle の rgb(a) 文字列を解析して扱う。
+
+  function parseRgb(str) {
+    const m = /rgba?\(([^)]+)\)/i.exec(String(str || ""));
+    if (!m) return null;
+    const parts = m[1].split(",").map((s) => parseFloat(s.trim()));
+    if (parts.length < 3 || parts.some((n) => Number.isNaN(n))) return null;
+    return { r: parts[0], g: parts[1], b: parts[2], a: parts.length >= 4 ? parts[3] : 1 };
+  }
+
+  function rgbToHex(c) {
+    if (!c) return "";
+    const h = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+    return `#${h(c.r)}${h(c.g)}${h(c.b)}`;
+  }
+
+  // WCAG の相対輝度。0..1 に正規化した各チャンネルにガンマ補正を施す。
+  function relLuminance(c) {
+    const lin = (v) => {
+      const s = v / 255;
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
+  }
+
+  function contrastRatio(fg, bg) {
+    if (!fg || !bg) return null;
+    const l1 = relLuminance(fg);
+    const l2 = relLuminance(bg);
+    const [hi, lo] = l1 >= l2 ? [l1, l2] : [l2, l1];
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  // 背景色は透明なことが多いため、祖先を辿って最初の不透明な背景色を採用する。
+  // 見つからなければ白とみなす（一般的なページ背景の近似）。
+  function effectiveBackground(el) {
+    let node = el;
+    while (node && node.nodeType === 1) {
+      const c = parseRgb(getComputedStyle(node).backgroundColor);
+      if (c && c.a > 0) return c;
+      node = node.parentElement;
+    }
+    return { r: 255, g: 255, b: 255, a: 1 };
+  }
+
+  // フォント指定の先頭ファミリだけを取り出す（引用符を除去）
+  function primaryFont(family) {
+    const first = String(family || "").split(",")[0].trim();
+    return first.replace(/^["']|["']$/g, "");
+  }
+
+  function inspectElement(id) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark || !document.contains(mark.el)) return { ok: false, reason: "detached" };
+    const el = mark.el;
+    const cs = getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    const fg = parseRgb(cs.color);
+    const bg = effectiveBackground(el);
+    const ratio = contrastRatio(fg, bg);
+    return {
+      ok: true,
+      info: {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        color: rgbToHex(fg) || cs.color,
+        background: rgbToHex(bg),
+        contrast: ratio != null ? Math.round(ratio * 100) / 100 : null,
+        fontSize: cs.fontSize,
+        fontWeight: cs.fontWeight,
+        fontFamily: primaryFont(cs.fontFamily),
+        padding: cs.padding,
+        margin: cs.margin,
+        display: cs.display,
+        role: (el.getAttribute && el.getAttribute("role")) || "",
+        ariaLabel: (el.getAttribute && el.getAttribute("aria-label")) || "",
+      },
+    };
+  }
+
   // キーボードショートカットで次/前のマーカーへ順送りにスクロールする。
   // 直近にジャンプしたマークの並び位置を起点に dir(+1/-1) で移動し、端は巻き戻す。
   // detached（DOM から消えた）マークは対象から外す。
@@ -970,6 +1051,9 @@
         break;
       case "MM_GET_ELEMENT_CONTENT":
         sendResponse(getElementContent(msg.id));
+        break;
+      case "MM_INSPECT_ELEMENT":
+        sendResponse(inspectElement(msg.id));
         break;
       case "MM_CAPTURE_PREPARE":
         prepareCapture(msg.id, Boolean(msg.clean), msg.hideIds).then(sendResponse);
