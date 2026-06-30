@@ -807,6 +807,11 @@
         setEnabled(Boolean(msg.enabled));
         sendResponse({ ok: true, enabled: state.enabled });
         break;
+      case "MM_TOGGLE_ENABLED":
+        // ショートカット用。現在の状態を反転する（broadcast で popup/panel も同期）
+        setEnabled(!state.enabled);
+        sendResponse({ ok: true, enabled: state.enabled });
+        break;
       case "MM_SET_STYLE":
         if (msg.style) {
           state.style = sanitizeStyle(msg.style, state.style);

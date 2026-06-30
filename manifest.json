@@ -17,6 +17,14 @@
   "background": {
     "service_worker": "background.js"
   },
+  "commands": {
+    "toggle-marking": {
+      "suggested_key": {
+        "default": "Alt+Shift+M"
+      },
+      "description": "マーキングモードのオン/オフを切り替える"
+    }
+  },
   "side_panel": {
     "default_path": "panel/panel.html"
   },
