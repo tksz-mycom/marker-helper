@@ -521,6 +521,35 @@ body {
   white-space: nowrap;
 }
 
+/* マーカーごとのメモ入力 */
+.mm-note {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11.5px;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.mm-note::placeholder {
+  color: var(--muted);
+}
+
+.mm-note:hover {
+  border-color: var(--accent);
+}
+
+.mm-note:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
 .mm-item-actions {
   display: flex;
   align-items: center;

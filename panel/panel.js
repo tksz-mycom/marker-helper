@@ -178,10 +178,11 @@ async function copyText(text) {
 
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
-  // ドラッグで連番（並び順）を入れ替えられるようにする
-  node.draggable = true;
   node.dataset.id = String(mark.id);
   const badge = node.querySelector(".mm-badge");
+  // 並べ替えは番号バッジ（ハンドル）からのみ開始する。
+  // li 全体を draggable にするとメモ入力のテキスト選択ができなくなるため。
+  badge.draggable = true;
   const tag = node.querySelector(".mm-tag");
   const detached = node.querySelector(".mm-detached");
   const selector = node.querySelector(".mm-selector");
@@ -209,6 +210,13 @@ function buildItem(mark) {
 
   node.querySelector(".mm-act-locate").addEventListener("click", () => {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
+  });
+
+  // メモ（注釈）。content は再描画を伴わないため、確定時（change）に送って反映する。
+  const noteEl = node.querySelector(".mm-note");
+  noteEl.value = mark.note || "";
+  noteEl.addEventListener("change", () => {
+    sendToTab({ type: "MM_SET_NOTE", id: mark.id, note: noteEl.value });
   });
 
   // 行ごとの「マーカー込み」チェック。上書きがあればそれを、無ければ全体トグル（既定）を初期値にする。

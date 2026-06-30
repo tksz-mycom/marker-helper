@@ -338,9 +338,16 @@
     return state.marks.find((m) => m.el === el) || null;
   }
 
+  // メモ（注釈）は自由記述。長すぎる値は保存・通信コストのため上限で切り詰める。
+  const NOTE_MAX = 500;
+  function sanitizeNote(value) {
+    if (typeof value !== "string") return "";
+    return value.length > NOTE_MAX ? value.slice(0, NOTE_MAX) : value;
+  }
+
   // 要素と確定済みスタイルからマーク本体を生成して state へ積む（描画要素も作る）。
   // 後処理（relabel / ループ起動 / 位置同期 / 通知）は呼び出し側で行う。
-  function buildMark(el, st) {
+  function buildMark(el, st, note) {
     const id = ++state.counter;
 
     const box = document.createElement("div");
@@ -357,6 +364,7 @@
       xpath: generateXPath(el),
       tag: describeTag(el),
       text: snippet(el),
+      note: sanitizeNote(note),
       color: st.color,
       lineStyle: st.lineStyle,
       width: st.width,
@@ -419,7 +427,7 @@
         continue;
       }
       // スタイルは content 側の値域で検証・クランプしてから採用する
-      buildMark(el, sanitizeStyle(item, state.style));
+      buildMark(el, sanitizeStyle(item, state.style), item.note);
       restored++;
     }
 
@@ -479,6 +487,15 @@
     state.marks = [];
     state.counter = 0;
     broadcast();
+  }
+
+  // 指定マークのメモ（注釈）を更新する。表示要素には影響しないため再描画は不要。
+  // 編集中の panel の再描画・フォーカス喪失を避けるため broadcast はしない
+  // （content が source of truth なのでエクスポート/永続化には反映される）。
+  function setNote(id, note) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return;
+    mark.note = sanitizeNote(note);
   }
 
   function scrollToMark(id) {
@@ -600,6 +617,7 @@
       xpath: m.xpath,
       tag: m.tag,
       text: m.text,
+      note: m.note,
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
@@ -616,6 +634,7 @@
       xpath: m.xpath,
       tag: m.tag,
       text: m.text,
+      note: m.note,
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
@@ -729,6 +748,10 @@
         break;
       case "MM_REMOVE_MARK":
         removeMark(msg.id);
+        sendResponse({ ok: true });
+        break;
+      case "MM_SET_NOTE":
+        setNote(msg.id, msg.note);
         sendResponse({ ok: true });
         break;
       case "MM_REORDER_MARKS":
