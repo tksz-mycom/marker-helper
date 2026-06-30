@@ -297,6 +297,45 @@ function setupSelectorEdit(selector, mark) {
   selector.addEventListener("blur", commit);
 }
 
+// 現在表示中のセレクタ（CSS/XPath）が壊れにくいかを簡易判定する。
+// id 起点や安定属性は強い、単一クラスは普通、nth-of-type / 位置指定の連結は弱い。
+// 厳密なテストではなく、編集を促すための目安として 3 段階で返す。
+function selectorRobustness(mark) {
+  const sel = selectorOf(mark);
+  if (!sel) return "weak";
+  if (selectorFormat === "xpath") {
+    // //*[@id=...] 起点は強い。/html/body/... の位置指定（[n]）が多いほど弱い。
+    if (/^\/\/\*\[@id=/.test(sel)) return "strong";
+    const idx = (sel.match(/\[\d+\]/g) || []).length;
+    if (idx === 0) return "strong";
+    return idx <= 1 ? "medium" : "weak";
+  }
+  // CSS: #id 起点は強い。nth-of-type の段数で安定度を見る。
+  if (sel.startsWith("#")) return "strong";
+  const nth = (sel.match(/:nth-of-type\(/g) || []).length;
+  if (nth === 0) return "strong"; // 安定属性・一意クラスのみ
+  return nth <= 1 ? "medium" : "weak";
+}
+
+const ROBUST_LABEL = { strong: "安定", medium: "普通", weak: "不安定" };
+const ROBUST_TITLE = {
+  strong: "id・安定属性・一意クラスで特定でき、壊れにくいセレクタです",
+  medium: "クラスや 1 段の位置指定に依存します。動的ページでは変わる可能性があります",
+  weak: "位置指定（nth-of-type）の連結に依存し、ページ構造の変化で壊れやすいセレクタです",
+};
+
+// 行のセレクタ堅牢性チップを現在の表示形式に合わせて更新する。
+function applyRobustness(node, mark) {
+  const el = node.querySelector(".mm-robust");
+  if (!el) return;
+  const level = selectorRobustness(mark);
+  el.hidden = false;
+  el.textContent = ROBUST_LABEL[level];
+  el.title = ROBUST_TITLE[level];
+  el.classList.remove("mm-robust--strong", "mm-robust--medium", "mm-robust--weak");
+  el.classList.add(`mm-robust--${level}`);
+}
+
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = String(mark.id);
@@ -315,6 +354,8 @@ function buildItem(mark) {
   tag.textContent = mark.tag;
   // セレクタ文字列は直接編集できる。確定でその文字列により要素を貼り替える。
   setupSelectorEdit(selector, mark);
+  // 表示中の形式に応じてセレクタの壊れにくさの目安を出す
+  applyRobustness(node, mark);
   text.textContent = mark.text || "（テキストなし）";
   detached.hidden = !mark.detached;
 

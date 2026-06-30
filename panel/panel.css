@@ -503,6 +503,44 @@ body {
   border-radius: 6px;
 }
 
+/* セレクタの壊れにくさの目安チップ（安定/普通/不安定）。
+   左の点で段階を示し、編集を促すための軽い視覚ヒントに留める。 */
+.mm-robust {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px 1px 5px;
+  border-radius: 6px;
+  white-space: nowrap;
+  cursor: help;
+}
+
+.mm-robust::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.mm-robust--strong {
+  color: #1a7f37;
+  background: #1a7f3722;
+}
+
+.mm-robust--medium {
+  color: #9a6700;
+  background: #9a670022;
+}
+
+.mm-robust--weak {
+  color: #cf222e;
+  background: #cf222e22;
+}
+
 /* セレクタ表示領域。グレー枠は wrap が持ち、その中にテキストとツール列を収める。
    （枠を code 側に持たせるとマージン相殺でツール列が枠外へはみ出すため wrap に移した） */
 .mm-selector-wrap {
