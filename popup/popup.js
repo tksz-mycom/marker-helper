@@ -35,6 +35,7 @@ const els = {
   previewBox: document.getElementById("mm-preview-box"),
   previewBadge: document.getElementById("mm-preview-badge"),
   openPanel: document.getElementById("mm-open-panel"),
+  openWindow: document.getElementById("mm-open-window"),
   count: document.getElementById("mm-count"),
 };
 
@@ -433,6 +434,22 @@ function wireEvents() {
       window.close();
     } catch (err) {
       console.error("[Marker:HELPER] サイドパネルを開けません:", err);
+    }
+  });
+
+  // 一覧を独立したポップアップウィンドウで開く。サイドパネルと違いページ幅を奪わないため、
+  // 撮りたいページを本来のレイアウト（全幅）のまま撮影できる。
+  els.openWindow.addEventListener("click", async () => {
+    try {
+      await chrome.windows.create({
+        url: chrome.runtime.getURL("panel/panel.html?window=1"),
+        type: "popup",
+        width: 440,
+        height: 820,
+      });
+      window.close();
+    } catch (err) {
+      console.error("[Marker:HELPER] ウィンドウを開けません:", err);
     }
   });
 

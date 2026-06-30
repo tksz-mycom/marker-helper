@@ -14,6 +14,14 @@ const nomatchEl = document.getElementById("mm-nomatch");
 const exportFormatEl = document.getElementById("mm-export-format");
 
 let activeTabId = null;
+// 撮影対象タブが属するウィンドウ。captureVisibleTab はこの windowId を明示して呼ぶ。
+let activeWindowId = null;
+
+// 別ウィンドウ表示モード（panel.html?window=1）。サイドパネルと違い対象ページの幅を
+// 奪わないため、本来のレイアウトのまま撮影できる。対象タブの解決方法が変わる。
+const WINDOW_MODE = new URLSearchParams(location.search).get("window") === "1";
+// 別ウィンドウモードで対象にする「直近にフォーカスされた通常ウィンドウ」の id。
+let lastNormalWindowId = null;
 
 // 絞り込み文字列（小文字化して部分一致で照合する）。空なら全件表示。
 let filterText = "";
@@ -150,14 +158,38 @@ function sendToTab(message) {
   });
 }
 
-async function resolveActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+function acceptTab(tab) {
   if (!tab || !tab.id || !tab.url || UNSUPPORTED.test(tab.url)) {
     activeTabId = null;
+    activeWindowId = null;
     return false;
   }
   activeTabId = tab.id;
+  activeWindowId = tab.windowId;
   return true;
+}
+
+async function resolveActiveTab() {
+  if (!WINDOW_MODE) {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    return acceptTab(tab);
+  }
+  // 別ウィンドウモード: 自分（ポップアップ）ではなく、直近にフォーカスされた
+  // 通常ウィンドウのアクティブタブを対象にする。
+  let winId = lastNormalWindowId;
+  if (winId == null) {
+    const normals = (await chrome.windows.getAll()).filter((w) => w.type === "normal");
+    const win = normals.find((w) => w.focused) || normals[0];
+    winId = win ? win.id : null;
+    lastNormalWindowId = winId;
+  }
+  if (winId == null) {
+    activeTabId = null;
+    activeWindowId = null;
+    return false;
+  }
+  const [tab] = await chrome.tabs.query({ active: true, windowId: winId });
+  return acceptTab(tab);
 }
 
 // ---- 描画 -------------------------------------------------------------
@@ -648,6 +680,15 @@ async function cropToBlob(dataUrl, rect, dpr, viewport) {
 const MAX_CANVAS_PX = 32000; // ブラウザの canvas 寸法上限の安全側
 const CAPTURE_THROTTLE_MS = 350; // captureVisibleTab の呼び出し制限を避ける間隔
 
+// 対象タブが属するウィンドウのビューポートを撮影する。別ウィンドウモードでは
+// 自分（ポップアップ）ではなく対象ページのウィンドウを明示する必要がある。
+function captureViewport() {
+  if (activeWindowId != null) {
+    return chrome.tabs.captureVisibleTab(activeWindowId, { format: "png" });
+  }
+  return chrome.tabs.captureVisibleTab({ format: "png" });
+}
+
 async function stitchTallBlob(page, dpr, viewport) {
   const canvas = document.createElement("canvas");
   canvas.width = Math.min(MAX_CANVAS_PX, Math.max(1, Math.round(page.width * dpr)));
@@ -661,7 +702,7 @@ async function stitchTallBlob(page, dpr, viewport) {
     const sc = await sendToTab({ type: "MM_CAPTURE_SCROLL", y: page.y + filled });
     if (!sc || !sc.ok) break;
     await delay(CAPTURE_THROTTLE_MS);
-    const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
+    const dataUrl = await captureViewport();
     const img = await loadImage(dataUrl);
 
     const viewTopPage = sc.scrollY;
@@ -733,7 +774,7 @@ async function captureMarkBlob(mark, clean, hideIds = excludedMarkIds()) {
       const blob = await stitchTallBlob(prep.pageRect, prep.dpr, prep.viewport);
       return { ok: true, blob };
     }
-    const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
+    const dataUrl = await captureViewport();
     const blob = await cropToBlob(dataUrl, prep.rect, prep.dpr, prep.viewport);
     return { ok: true, blob };
   } catch (err) {
@@ -856,7 +897,19 @@ chrome.tabs.onActivated.addListener(() => reload());
 chrome.tabs.onUpdated.addListener((tabId, info) => {
   if (tabId === activeTabId && info.status === "complete") reload();
 });
-chrome.windows?.onFocusChanged?.addListener(() => reload());
+chrome.windows?.onFocusChanged?.addListener(async (winId) => {
+  // 別ウィンドウモードでは、フォーカスされた通常ウィンドウを撮影対象として記憶する
+  // （自分のポップアップウィンドウがフォーカスされたときは対象を変えない）。
+  if (WINDOW_MODE && winId != null && winId !== chrome.windows.WINDOW_ID_NONE) {
+    try {
+      const w = await chrome.windows.get(winId);
+      if (w && w.type === "normal") lastNormalWindowId = winId;
+    } catch {
+      /* ウィンドウ消失等は無視 */
+    }
+  }
+  reload();
+});
 
 loadShotMarks();
 loadSelectorFormat();
