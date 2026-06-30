@@ -47,7 +47,9 @@ const shotInclOverrides = new Map();
 
 includeMarksEl.addEventListener("change", () => {
   saveShotMarks();
-  // 未上書きの行を新しい既定値に追従させるため再描画する
+  // 未上書きの行を新しい既定値に追従させるため再描画する。
+  // 既定値の切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する。
+  suppressAnimOnce = true;
   render(currentMarks);
 });
 
