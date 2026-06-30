@@ -803,6 +803,25 @@ body {
   outline-offset: 1px;
 }
 
+/* JSON ファイルのドラッグ中に出す全面のドロップ案内（取り込み導線の明示） */
+body.mm-drop-active::after {
+  content: "JSONファイルをドロップして読み込み";
+  position: fixed;
+  inset: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--accent-weak);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 /* 要素の中身をコピーするボタン群（テキスト/HTML）。小さく控えめに並べる */
 .mm-content-copy {
   display: flex;

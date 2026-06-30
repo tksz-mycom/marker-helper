@@ -771,7 +771,49 @@ async function exportMarks() {
   showToast(`${marks.length}件のマーカーをエクスポートしました`);
 }
 
-// 選択されたファイルを読み込み、検証してから content に渡してマークを復元する。
+// 検証済みのマーク配列を content に渡して復元し、結果をトーストで通知する。
+async function applyImportedMarks(marks) {
+  const res = await sendToTab({ type: "MM_IMPORT_MARKS", marks });
+  if (!res || !res.ok) {
+    showToast("インポートに失敗しました");
+    return;
+  }
+  // 一覧は content からの更新通知で再描画される。ここでは結果だけ通知する
+  if (res.skipped > 0) {
+    showToast(`${res.restored}件を復元（${res.skipped}件は対象が見つからず除外）`);
+  } else {
+    showToast(`${res.restored}件のマーカーを復元しました`);
+  }
+}
+
+// JSON テキストを検証し、マーカー一覧ファイルなら content に渡して復元する。
+// ファイル読込・ドラッグ&ドロップ・クリップボード貼り付けの共通経路。
+function importMarksFromText(text) {
+  if (activeTabId == null) {
+    showToast("このページでは利用できません");
+    return;
+  }
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    showToast("読み込みに失敗しました（JSON形式エラー）");
+    return;
+  }
+  if (
+    !data ||
+    typeof data !== "object" ||
+    data.app !== MARKS_FILE_APP ||
+    data.kind !== MARKS_FILE_KIND ||
+    !Array.isArray(data.marks)
+  ) {
+    showToast("マーカー一覧のファイルではありません");
+    return;
+  }
+  applyImportedMarks(data.marks);
+}
+
+// 選択／ドロップされたファイルを読み込み、検証してから復元する。
 function importMarksFromFile(file) {
   if (!file) return;
   if (activeTabId == null) {
@@ -784,36 +826,7 @@ function importMarksFromFile(file) {
   }
   const reader = new FileReader();
   reader.onerror = () => showToast("ファイルの読み込みに失敗しました");
-  reader.onload = async () => {
-    let data;
-    try {
-      data = JSON.parse(String(reader.result));
-    } catch {
-      showToast("読み込みに失敗しました（JSON形式エラー）");
-      return;
-    }
-    if (
-      !data ||
-      typeof data !== "object" ||
-      data.app !== MARKS_FILE_APP ||
-      data.kind !== MARKS_FILE_KIND ||
-      !Array.isArray(data.marks)
-    ) {
-      showToast("マーカー一覧のファイルではありません");
-      return;
-    }
-    const res = await sendToTab({ type: "MM_IMPORT_MARKS", marks: data.marks });
-    if (!res || !res.ok) {
-      showToast("インポートに失敗しました");
-      return;
-    }
-    // 一覧は content からの更新通知で再描画される。ここでは結果だけ通知する
-    if (res.skipped > 0) {
-      showToast(`${res.restored}件を復元（${res.skipped}件は対象が見つからず除外）`);
-    } else {
-      showToast(`${res.restored}件のマーカーを復元しました`);
-    }
-  };
+  reader.onload = () => importMarksFromText(String(reader.result));
   reader.readAsText(file);
 }
 
@@ -1068,6 +1081,57 @@ importFileEl.addEventListener("change", () => {
   importMarksFromFile(file);
   // 同じファイルを連続で選べるよう値をリセット
   importFileEl.value = "";
+});
+
+// ---- ドラッグ&ドロップ／クリップボードでのインポート ------------------
+// ボタンからのファイル選択に加え、JSON ファイルのドロップとクリップボード貼り付けでも
+// 取り込めるようにする。一覧の並べ替え（内部 D&D）は Files を運ばないため衝突しない。
+
+// 外部ファイルのドラッグかどうか（並べ替えの内部 D&D と区別する）
+function isFileDrag(e) {
+  return Array.from(e.dataTransfer?.types || []).includes("Files");
+}
+
+// dragenter/leave の入れ子で表示がちらつかないよう深度で管理する
+let fileDragDepth = 0;
+function setDropActive(active) {
+  document.body.classList.toggle("mm-drop-active", active);
+}
+
+document.addEventListener("dragenter", (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault();
+  fileDragDepth++;
+  setDropActive(true);
+});
+document.addEventListener("dragover", (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "copy";
+});
+document.addEventListener("dragleave", (e) => {
+  if (!isFileDrag(e)) return;
+  fileDragDepth = Math.max(0, fileDragDepth - 1);
+  if (fileDragDepth === 0) setDropActive(false);
+});
+document.addEventListener("drop", (e) => {
+  if (!isFileDrag(e)) return;
+  e.preventDefault();
+  fileDragDepth = 0;
+  setDropActive(false);
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  importMarksFromFile(file);
+});
+
+// クリップボード貼り付け。入力欄・編集中の貼り付けは妨げず、マーカー一覧 JSON
+// らしきテキスト（識別子を含む）のときだけ取り込む。
+document.addEventListener("paste", (e) => {
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+  const text = e.clipboardData?.getData("text/plain");
+  if (!text || !text.includes(MARKS_FILE_APP)) return;
+  e.preventDefault();
+  importMarksFromText(text);
 });
 
 // ---- 同期 -------------------------------------------------------------
