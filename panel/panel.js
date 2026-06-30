@@ -28,7 +28,7 @@ let filterText = "";
 
 function matchesFilter(mark) {
   if (!filterText) return true;
-  const haystack = [mark.tag, selectorOf(mark), mark.text, mark.note]
+  const haystack = [mark.tag, selectorOf(mark), mark.text, mark.note, mark.group]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -393,6 +393,32 @@ function applyRobustness(node, mark) {
   el.classList.add(`mm-robust--${level}`);
 }
 
+// グループ名から安定した色相を導く（同名は常に同色になる簡易ハッシュ）。
+function groupHue(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) % 360;
+  }
+  return h;
+}
+
+// グループ名チップの表示・色を更新する（未設定なら隠す）。
+function applyGroupChip(node, mark) {
+  const chip = node.querySelector(".mm-group-chip");
+  if (!chip) return;
+  const name = (mark.group || "").trim();
+  if (!name) {
+    chip.hidden = true;
+    chip.textContent = "";
+    return;
+  }
+  const hue = groupHue(name);
+  chip.hidden = false;
+  chip.textContent = name;
+  chip.style.color = `hsl(${hue} 60% 32%)`;
+  chip.style.background = `hsl(${hue} 70% 92%)`;
+}
+
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = String(mark.id);
@@ -467,6 +493,16 @@ function buildItem(mark) {
     // 変更通知による再描画でのフェードイン（点滅）を抑止する
     suppressAnimOnce = true;
     sendToTab({ type: "MM_SET_MARK_COLOR", id: mark.id, color: colorEl.value });
+  });
+
+  // グループ名チップを表示し、入力で変更できるようにする。
+  applyGroupChip(node, mark);
+  const groupEl = node.querySelector(".mm-group");
+  groupEl.value = mark.group || "";
+  groupEl.addEventListener("change", () => {
+    // content が broadcast で再描画するため、フェードイン（点滅）を抑止する
+    suppressAnimOnce = true;
+    sendToTab({ type: "MM_SET_GROUP", id: mark.id, group: groupEl.value });
   });
 
   // メモ（注釈）。content は再描画を伴わないため、確定時（change）に送って反映する。
@@ -707,9 +743,9 @@ function downloadText(text, filename, mime) {
 }
 
 // 一覧の各行に出力する列（CSV / Markdown 共通）
-const EXPORT_COLUMNS = ["番号", "タグ", "CSSセレクタ", "XPath", "テキスト", "メモ"];
+const EXPORT_COLUMNS = ["番号", "タグ", "グループ", "CSSセレクタ", "XPath", "テキスト", "メモ"];
 function exportRow(m) {
-  return [m.label, m.tag, m.selector, m.xpath || "", m.text || "", m.note || ""];
+  return [m.label, m.tag, m.group || "", m.selector, m.xpath || "", m.text || "", m.note || ""];
 }
 
 // CSV の1セルをエスケープ（カンマ・引用符・改行を含む場合は引用符で囲む）

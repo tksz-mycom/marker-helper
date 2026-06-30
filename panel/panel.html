@@ -110,6 +110,8 @@
         <div class="mm-item-body">
           <div class="mm-item-head">
             <span class="mm-tag"></span>
+            <!-- 分類用のグループ名チップ（名前から色を割り当てる・未設定時は非表示） -->
+            <span class="mm-group-chip" hidden></span>
             <!-- 現在表示中のセレクタが壊れにくいかの目安（安定/普通/不安定） -->
             <span class="mm-robust" hidden></span>
             <span class="mm-detached" hidden>消失</span>
@@ -147,6 +149,8 @@
             <button type="button" class="mm-act mm-act-copy-text">テキスト</button>
             <button type="button" class="mm-act mm-act-copy-html">HTML</button>
           </div>
+          <!-- 分類用のグループ名（任意）。同名は同色のチップでまとまり、絞り込み対象にもなる -->
+          <input type="text" class="mm-group" maxlength="30" placeholder="グループ名（任意）…" aria-label="グループ名" />
           <!-- マーカーごとの自由記述メモ（注釈）。エクスポートにも含まれる -->
           <input type="text" class="mm-note" maxlength="500" placeholder="メモを追加…" aria-label="メモ" />
           <div class="mm-item-actions">

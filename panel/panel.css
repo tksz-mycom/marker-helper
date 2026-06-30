@@ -667,6 +667,45 @@ body {
   background: var(--accent-weak);
 }
 
+/* グループ名入力。メモと同じ見た目で一段控えめ（幅は内容に追従させず全幅） */
+.mm-group {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.mm-group::placeholder {
+  color: var(--muted);
+}
+
+.mm-group:hover {
+  border-color: var(--accent);
+}
+
+.mm-group:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+/* グループ名チップ（見出しに表示）。名前のハッシュから色を当てる（色は JS が設定） */
+.mm-group-chip {
+  flex: none;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 .mm-item-actions {
   display: flex;
   align-items: center;

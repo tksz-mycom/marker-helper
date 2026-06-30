@@ -398,9 +398,17 @@
     return value.length > NOTE_MAX ? value.slice(0, NOTE_MAX) : value;
   }
 
+  // グループ名は分類用の短いラベル（自由記述）。前後空白を除き上限で切り詰める。
+  const GROUP_MAX = 30;
+  function sanitizeGroup(value) {
+    if (typeof value !== "string") return "";
+    const trimmed = value.trim();
+    return trimmed.length > GROUP_MAX ? trimmed.slice(0, GROUP_MAX) : trimmed;
+  }
+
   // 要素と確定済みスタイルからマーク本体を生成して state へ積む（描画要素も作る）。
   // 後処理（relabel / ループ起動 / 位置同期 / 通知）は呼び出し側で行う。
-  function buildMark(el, st, note) {
+  function buildMark(el, st, note, group) {
     const id = ++state.counter;
 
     const box = document.createElement("div");
@@ -418,6 +426,7 @@
       tag: describeTag(el),
       text: snippet(el),
       note: sanitizeNote(note),
+      group: sanitizeGroup(group),
       color: st.color,
       lineStyle: st.lineStyle,
       width: st.width,
@@ -481,7 +490,7 @@
         continue;
       }
       // スタイルは content 側の値域で検証・クランプしてから採用する
-      buildMark(el, sanitizeStyle(item, state.style), item.note);
+      buildMark(el, sanitizeStyle(item, state.style), item.note, item.group);
       restored++;
     }
 
@@ -567,6 +576,16 @@
     const mark = state.marks.find((m) => m.id === id);
     if (!mark) return;
     mark.note = sanitizeNote(note);
+    scheduleAutosave();
+  }
+
+  // 指定マークのグループ名を更新する。一覧のチップ表示・色分けを更新するため
+  // broadcast する（入力は change=確定時に届くため再描画でフォーカスは失わない）。
+  function setGroup(id, group) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return;
+    mark.group = sanitizeGroup(group);
+    broadcast();
     scheduleAutosave();
   }
 
@@ -889,6 +908,7 @@
       tag: m.tag,
       text: m.text,
       note: m.note,
+      group: m.group,
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
@@ -906,6 +926,7 @@
       tag: m.tag,
       text: m.text,
       note: m.note,
+      group: m.group,
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
@@ -1028,6 +1049,10 @@
         break;
       case "MM_SET_NOTE":
         setNote(msg.id, msg.note);
+        sendResponse({ ok: true });
+        break;
+      case "MM_SET_GROUP":
+        setGroup(msg.id, msg.group);
         sendResponse({ ok: true });
         break;
       case "MM_SET_MARK_COLOR":
