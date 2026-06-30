@@ -344,6 +344,13 @@ function todayStamp() {
   return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
 }
 
+// 日時を YYYYMMDD-HHMMSS でファイル名に使う（同一日に複数保存しても重複しにくくする）
+function nowStamp() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${todayStamp()}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+}
+
 function downloadJson(data, filename) {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -522,7 +529,7 @@ async function saveImage(mark, clean) {
   try {
     const a = document.createElement("a");
     a.href = url;
-    a.download = `marker-helper-shot-${todayStamp()}-${mark.label}.png`;
+    a.download = `marker-helper-shot-${nowStamp()}-${mark.label}.png`;
     document.body.appendChild(a);
     a.click();
     a.remove();
