@@ -133,6 +133,11 @@
             </div>
           </div>
           <span class="mm-text"></span>
+          <!-- 要素の中身をそのままコピーする（テキスト=textContent / HTML=outerHTML） -->
+          <div class="mm-content-copy" role="group" aria-label="要素の内容をコピー">
+            <button type="button" class="mm-act mm-act-copy-text">テキスト</button>
+            <button type="button" class="mm-act mm-act-copy-html">HTML</button>
+          </div>
           <!-- マーカーごとの自由記述メモ（注釈）。エクスポートにも含まれる -->
           <input type="text" class="mm-note" maxlength="500" placeholder="メモを追加…" aria-label="メモ" />
           <div class="mm-item-actions">

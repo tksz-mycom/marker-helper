@@ -230,6 +230,23 @@ async function copyText(text) {
   }
 }
 
+// 要素の中身（textContent / outerHTML）を content から取得してコピーする。
+async function copyElementContent(mark, kind) {
+  const res = await sendToTab({ type: "MM_GET_ELEMENT_CONTENT", id: mark.id });
+  if (!res || !res.ok) {
+    showToast("対象が見つかりません（消失したマーカー）");
+    return;
+  }
+  const value = kind === "html" ? res.html : res.text;
+  const kindLabel = kind === "html" ? "HTML" : "テキスト";
+  if (!value) {
+    showToast(`コピーできる${kindLabel}がありません`);
+    return;
+  }
+  const ok = await copyText(value);
+  showToast(ok ? `#${mark.label} の${kindLabel}をコピーしました` : "コピーに失敗しました");
+}
+
 // セレクタ貼り替えの失敗理由（content の reason）に対応する日本語メッセージ
 const SELECTOR_ERROR = {
   empty: "セレクタが空です",
@@ -374,6 +391,14 @@ function buildItem(mark) {
 
   node.querySelector(".mm-act-locate").addEventListener("click", () => {
     sendToTab({ type: "MM_SCROLL_TO", id: mark.id });
+  });
+
+  // 要素の中身（テキスト/HTML）をコピーする。content から都度取得する（再描画は伴わない）。
+  node.querySelector(".mm-act-copy-text").addEventListener("click", () => {
+    copyElementContent(mark, "text");
+  });
+  node.querySelector(".mm-act-copy-html").addEventListener("click", () => {
+    copyElementContent(mark, "html");
   });
 
   // このマーカーの色を個別に変更する。確定時に content へ送り、即時反映させる。

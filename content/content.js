@@ -626,6 +626,17 @@
     mark.box.classList.add("mm-flash");
   }
 
+  // 指定マークの要素の文字列内容（textContent / outerHTML）を返す。
+  // ページDOMは読むだけで書き換えない。通信コストのため上限で切り詰める。
+  const ELEMENT_CONTENT_MAX = 50000;
+  function getElementContent(id) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark || !document.contains(mark.el)) return { ok: false, reason: "detached" };
+    const text = (mark.el.textContent || "").slice(0, ELEMENT_CONTENT_MAX);
+    const html = (mark.el.outerHTML || "").slice(0, ELEMENT_CONTENT_MAX);
+    return { ok: true, text, html };
+  }
+
   // キーボードショートカットで次/前のマーカーへ順送りにスクロールする。
   // 直近にジャンプしたマークの並び位置を起点に dir(+1/-1) で移動し、端は巻き戻す。
   // detached（DOM から消えた）マークは対象から外す。
@@ -956,6 +967,9 @@
       case "MM_JUMP":
         jumpToMark(msg.dir === -1 ? -1 : 1);
         sendResponse({ ok: true });
+        break;
+      case "MM_GET_ELEMENT_CONTENT":
+        sendResponse(getElementContent(msg.id));
         break;
       case "MM_CAPTURE_PREPARE":
         prepareCapture(msg.id, Boolean(msg.clean), msg.hideIds).then(sendResponse);

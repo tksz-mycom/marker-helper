@@ -44,6 +44,7 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 | `MM_REORDER_MARKS` | panel → content | 指定ID順にマークを並べ替え（連番ラベルを入替え） |
 | `MM_SCROLL_TO` | panel → content | 指定IDの要素へスクロール＆点滅 |
 | `MM_JUMP` | background → content | ショートカットで次/前（`dir` +1/-1）のマーカーへ順送りにスクロール（`jumpToMark`、`lastJumpId` 起点・端は巻き戻し・detached 除外） |
+| `MM_GET_ELEMENT_CONTENT` | panel → content | 指定マークの要素内容（`text`=textContent / `html`=outerHTML、`ELEMENT_CONTENT_MAX` で切詰）を取得。DOMは読むだけ |
 | `MM_SET_SELECTOR` | panel → content | 編集したセレクタ文字列（`value`/`format`）で要素を再特定し、見つかればそのマークを貼り替える。`{ok,reason}` を返す |
 | `MM_EXPORT_MARKS` | panel → content | 復元用にマーク一覧（全スタイル）と `location.href` を取得（保存は panel が実施） |
 | `MM_IMPORT_MARKS` | panel → content | JSONのマーク一覧を渡して復元。各 selector で要素を再特定し `{ok,restored,skipped}` を返す |

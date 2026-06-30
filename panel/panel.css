@@ -803,6 +803,17 @@ body {
   outline-offset: 1px;
 }
 
+/* 要素の中身をコピーするボタン群（テキスト/HTML）。小さく控えめに並べる */
+.mm-content-copy {
+  display: flex;
+  gap: 6px;
+}
+
+.mm-content-copy .mm-act {
+  padding: 3px 8px;
+  font-size: 10px;
+}
+
 /* ---- トースト ---- */
 .mm-toast {
   position: fixed;
