@@ -8,8 +8,64 @@ const tpl = document.getElementById("mm-item-tpl");
 const toastEl = document.getElementById("mm-toast");
 const includeMarksEl = document.getElementById("mm-shot-marks");
 const enabledEl = document.getElementById("mm-enabled");
+const selFormatEl = document.getElementById("mm-selformat");
 
 let activeTabId = null;
+
+// 表示・コピーするセレクタ形式（"css" | "xpath"）。panel 専用の UI 設定として永続化する。
+const SELFORMAT_KEY = "mm:selectorFormat";
+let selectorFormat = "css";
+
+function loadSelectorFormat() {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.local.get(SELFORMAT_KEY, (data) => {
+        void chrome.runtime.lastError;
+        const v = data && data[SELFORMAT_KEY];
+        if (v === "css" || v === "xpath") selectorFormat = v;
+        applySelectorFormatUI();
+        resolve();
+      });
+    } catch {
+      resolve();
+    }
+  });
+}
+
+function saveSelectorFormat() {
+  try {
+    chrome.storage.local.set({ [SELFORMAT_KEY]: selectorFormat });
+  } catch {
+    /* storage 権限が無い等は無視 */
+  }
+}
+
+// セグメントボタンの選択状態を現在の selectorFormat に合わせる
+function applySelectorFormatUI() {
+  for (const btn of selFormatEl.children) {
+    btn.classList.toggle("is-active", btn.dataset.value === selectorFormat);
+  }
+}
+
+// マークから現在の形式に応じたセレクタ文字列を取り出す（xpath 欠落時は CSS にフォールバック）
+function selectorOf(mark) {
+  if (selectorFormat === "xpath" && mark.xpath) return mark.xpath;
+  return mark.selector;
+}
+
+selFormatEl.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-value]");
+  if (!btn) return;
+  const next = btn.dataset.value;
+  if (next !== "css" && next !== "xpath") return;
+  if (next === selectorFormat) return;
+  selectorFormat = next;
+  applySelectorFormatUI();
+  saveSelectorFormat();
+  // 表示中のセレクタ文字列を切り替えるため再描画（点滅は抑止）
+  suppressAnimOnce = true;
+  render(currentMarks);
+});
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
 
@@ -134,14 +190,14 @@ function buildItem(mark) {
   badge.textContent = String(mark.label);
   badge.style.background = mark.color;
   tag.textContent = mark.tag;
-  selector.textContent = mark.selector;
+  selector.textContent = selectorOf(mark);
   text.textContent = mark.text || "（テキストなし）";
   detached.hidden = !mark.detached;
 
   // アイコンボタンのためテキストは差し替えず、成功時は緑のチェック状態（is-done）で示す
   const copyBtn = node.querySelector(".mm-act-copy");
   copyBtn.addEventListener("click", async () => {
-    const ok = await copyText(mark.selector);
+    const ok = await copyText(selectorOf(mark));
     if (ok) {
       copyBtn.classList.add("is-done");
       showToast(`#${mark.label} のセレクタをコピーしました`);
@@ -320,7 +376,7 @@ document.getElementById("mm-copy-all").addEventListener("click", async () => {
     showToast("コピーするマーカーがありません");
     return;
   }
-  const all = currentMarks.map((m) => m.selector).join("\n");
+  const all = currentMarks.map((m) => selectorOf(m)).join("\n");
   const ok = await copyText(all);
   showToast(ok ? `${currentMarks.length}件のセレクタをコピーしました` : "コピーに失敗しました");
 });
@@ -583,4 +639,5 @@ chrome.tabs.onUpdated.addListener((tabId, info) => {
 chrome.windows?.onFocusChanged?.addListener(() => reload());
 
 loadShotMarks();
+loadSelectorFormat();
 reload();

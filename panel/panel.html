@@ -63,6 +63,14 @@
         <input type="checkbox" id="mm-shot-marks" />
         <span>スクリーンショットにマーカー・連番ラベルを含める（既定）</span>
       </label>
+      <!-- 表示・コピーするセレクタの形式 -->
+      <div class="mm-toolrow">
+        <span class="mm-toolrow-label">セレクタ形式</span>
+        <div class="mm-segmented" id="mm-selformat" role="radiogroup" aria-label="セレクタ形式">
+          <button type="button" data-value="css" class="is-active">CSS</button>
+          <button type="button" data-value="xpath">XPath</button>
+        </div>
+      </div>
     </header>
 
     <p id="mm-empty" class="mm-empty">

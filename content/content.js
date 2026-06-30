@@ -223,9 +223,47 @@
     return n;
   }
 
+  // 動的ページでも壊れにくい安定属性。これらが一意なら nth-of-type より優先する。
+  const STABLE_ATTRS = ["data-testid", "data-test", "data-cy", "data-qa", "data-id", "name", "aria-label"];
+
+  function isUniqueSelector(sel) {
+    try {
+      return document.querySelectorAll(sel).length === 1;
+    } catch {
+      return false;
+    }
+  }
+
+  // 属性セレクタ用に値をダブルクォート文字列としてエスケープする
+  function cssAttrValue(value) {
+    return `"${String(value).replace(/(["\\])/g, "\\$1")}"`;
+  }
+
+  // 要素単体で一意になる安定セレクタ（属性／クラス）を探す。無ければ null。
+  function uniqueAttrSelector(el) {
+    const tag = el.nodeName.toLowerCase();
+    for (const attr of STABLE_ATTRS) {
+      const v = el.getAttribute && el.getAttribute(attr);
+      if (!v) continue;
+      const sel = `${tag}[${attr}=${cssAttrValue(v)}]`;
+      if (isUniqueSelector(sel)) return sel;
+    }
+    // 単一クラスで一意になるならそれも候補にする
+    if (typeof el.className === "string" && el.className.trim()) {
+      for (const cls of el.className.trim().split(/\s+/)) {
+        const sel = `${tag}.${CSS.escape(cls)}`;
+        if (isUniqueSelector(sel)) return sel;
+      }
+    }
+    return null;
+  }
+
   function generateSelector(el) {
     if (!(el instanceof Element)) return "";
     if (el.id && uniqueById(el.id)) return `#${CSS.escape(el.id)}`;
+    // id が無くても安定属性で一意になるならそれを使う（動的ページで壊れにくい）
+    const attrSel = uniqueAttrSelector(el);
+    if (attrSel) return attrSel;
 
     const parts = [];
     let node = el;
@@ -241,6 +279,41 @@
     }
     const selector = parts.join(" > ");
     return selector || el.nodeName.toLowerCase();
+  }
+
+  // ---- XPath 生成 -------------------------------------------------------
+
+  // XPath の文字列リテラル化（引用符を含む値は concat() で表現する）
+  function xpathLiteral(s) {
+    const str = String(s);
+    if (!str.includes('"')) return `"${str}"`;
+    if (!str.includes("'")) return `'${str}'`;
+    return `concat("${str.replace(/"/g, '",\'"\',"')}")`;
+  }
+
+  // 一意な id があれば //*[@id=...] を起点に、無ければ /html/body/... の位置指定で組む。
+  function generateXPath(el) {
+    if (!(el instanceof Element)) return "";
+    const segs = [];
+    let node = el;
+    while (node && node.nodeType === 1) {
+      if (node.id && uniqueById(node.id)) {
+        segs.unshift(`*[@id=${xpathLiteral(node.id)}]`);
+        return `//${segs.join("/")}`;
+      }
+      if (node === document.documentElement) {
+        segs.unshift("html");
+        break;
+      }
+      let idx = 1;
+      let sib = node;
+      while ((sib = sib.previousElementSibling)) {
+        if (sib.nodeName === node.nodeName) idx++;
+      }
+      segs.unshift(`${node.nodeName.toLowerCase()}[${idx}]`);
+      node = node.parentElement;
+    }
+    return `/${segs.join("/")}`;
   }
 
   function describeTag(el) {
@@ -281,6 +354,7 @@
       id,
       label: 0, // 表示用の連番は relabel() が配列の並び順から割り当てる
       selector: generateSelector(el),
+      xpath: generateXPath(el),
       tag: describeTag(el),
       text: snippet(el),
       color: st.color,
@@ -523,6 +597,7 @@
       id: m.id,
       label: m.label,
       selector: m.selector,
+      xpath: m.xpath,
       tag: m.tag,
       text: m.text,
       color: m.color,
@@ -538,6 +613,7 @@
     return state.marks.map((m) => ({
       label: m.label,
       selector: m.selector,
+      xpath: m.xpath,
       tag: m.tag,
       text: m.text,
       color: m.color,
