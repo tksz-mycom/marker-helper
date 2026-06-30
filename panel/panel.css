@@ -484,21 +484,25 @@ body {
   border-radius: 6px;
 }
 
-/* セレクタ表示領域。右上にコピーアイコンを重ねる */
+/* セレクタ表示領域。グレー枠は wrap が持ち、その中にテキストとツール列を収める。
+   （枠を code 側に持たせるとマージン相殺でツール列が枠外へはみ出すため wrap に移した） */
 .mm-selector-wrap {
   position: relative;
-}
-
-.mm-selector {
-  display: block;
   margin: var(--space-1) 0;
   padding: 6px 8px;
-  /* 右上のアイコン列と文字が重ならないよう右側に余白を確保 */
-  padding-right: 34px;
+  /* 右上のアイコン列とテキストが重ならないよう右側に余白を確保 */
+  padding-right: 36px;
   /* 縦に積んだコピー・位置へボタンが収まる高さを確保する */
   min-height: 52px;
   background: #f4f0ed;
   border-radius: 6px;
+}
+
+.mm-selector {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: none;
   font-family: var(--mono);
   font-size: 11.5px;
   color: #324;
@@ -506,10 +510,10 @@ body {
   word-break: break-all;
 }
 
-/* セレクタ表示領域の右上に重ねる操作アイコン列（コピー・位置へを縦に並べる） */
+/* セレクタ表示領域の右上に収める操作アイコン列（コピー・位置へを縦に並べる） */
 .mm-selector-tools {
   position: absolute;
-  top: 8px;
+  top: 6px;
   right: 6px;
   display: flex;
   flex-direction: column;
@@ -521,7 +525,7 @@ body {
   align-items: center;
   justify-content: center;
   width: 24px;
-  height: 22px;
+  height: 20px;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
