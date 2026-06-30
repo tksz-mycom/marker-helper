@@ -626,6 +626,22 @@
     mark.box.classList.add("mm-flash");
   }
 
+  // キーボードショートカットで次/前のマーカーへ順送りにスクロールする。
+  // 直近にジャンプしたマークの並び位置を起点に dir(+1/-1) で移動し、端は巻き戻す。
+  // detached（DOM から消えた）マークは対象から外す。
+  let lastJumpId = null;
+  function jumpToMark(dir) {
+    const live = state.marks.filter((m) => document.contains(m.el));
+    if (live.length === 0) return;
+    const from = live.findIndex((m) => m.id === lastJumpId);
+    // 起点が無ければ、次へ=先頭/前へ=末尾から始める
+    const base = from === -1 ? (dir > 0 ? -1 : 0) : from;
+    const next = (base + dir + live.length) % live.length;
+    const mark = live[next];
+    lastJumpId = mark.id;
+    scrollToMark(mark.id);
+  }
+
   // ---- スクショ撮影の下準備（panel から呼ばれる） ----------------------
   // panel は「下準備 → captureVisibleTab → 復帰」の順で呼ぶ。撮影画像に同時に
   // 写り込む各マークの枠・番号は、panel の「マーカー込み」設定（=hideIds に列挙
@@ -935,6 +951,10 @@
         break;
       case "MM_SCROLL_TO":
         scrollToMark(msg.id);
+        sendResponse({ ok: true });
+        break;
+      case "MM_JUMP":
+        jumpToMark(msg.dir === -1 ? -1 : 1);
         sendResponse({ ok: true });
         break;
       case "MM_CAPTURE_PREPARE":

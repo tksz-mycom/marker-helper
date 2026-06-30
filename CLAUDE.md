@@ -43,6 +43,7 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 | `MM_REMOVE_MARK` | panel → content | 指定IDのマーク削除 |
 | `MM_REORDER_MARKS` | panel → content | 指定ID順にマークを並べ替え（連番ラベルを入替え） |
 | `MM_SCROLL_TO` | panel → content | 指定IDの要素へスクロール＆点滅 |
+| `MM_JUMP` | background → content | ショートカットで次/前（`dir` +1/-1）のマーカーへ順送りにスクロール（`jumpToMark`、`lastJumpId` 起点・端は巻き戻し・detached 除外） |
 | `MM_SET_SELECTOR` | panel → content | 編集したセレクタ文字列（`value`/`format`）で要素を再特定し、見つかればそのマークを貼り替える。`{ok,reason}` を返す |
 | `MM_EXPORT_MARKS` | panel → content | 復元用にマーク一覧（全スタイル）と `location.href` を取得（保存は panel が実施） |
 | `MM_IMPORT_MARKS` | panel → content | JSONのマーク一覧を渡して復元。各 selector で要素を再特定し `{ok,restored,skipped}` を返す |
@@ -60,7 +61,7 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 
 **全マーカー一括保存（panel 専用）**。ヘッダーの「全画像を保存」（`#mm-shot-all` → `saveAllImages`）で、表示中（絞り込み後）の全マーカーを順に撮影して連続ダウンロードする。各行の `clean` は `shotInclOf`（行の上書き優先・無ければヘッダー既定）、写り込む他マークの `hideIds` は `hideIdsFromState`（DOMではなく状態から算出）で求め、撮影間に `delay` を挟んでダウンロードのスロットリングを避ける。
 
-**マーカーの自動保存（セッション）／メモ／個別色／XPath／ショートカット／絞り込み**。上記の追加機能群: (1) マークは `chrome.storage.session`（キー `mm:auto:<url>`）へ URL 単位で**自動保存**し再注入時に同一 URL なら `restoreMarks`→`importMarks` で**自動復元**する（追加/削除/並べ替え/色/メモ/インポートで `scheduleAutosave`、全消去でキー削除。session 領域は `background.js` の `setAccessLevel` で content から利用可、ブラウザ終了で消える）。(2) 各マークは自由記述の**メモ** `note`（`MM_SET_NOTE`、`sanitizeNote` で上限 `NOTE_MAX`）を持ち、エクスポートにも含む。(3) **個別色**変更 `MM_SET_MARK_COLOR`→`setMarkColor`（既存マークのみ。新規既定色は不変）。(4) セレクタは安定属性（`STABLE_ATTRS`）・一意クラス優先の CSS と **XPath**（`generateXPath`）を両方生成し、panel で形式を切替（`mm:selectorFormat` 永続化）。(5) **キーボードショートカット**（`manifest.json` の `commands`、既定 `Alt+Shift+M`）は background→`MM_TOGGLE_ENABLED`→content で反転。(6) panel の**絞り込み**（`#mm-filter`、タグ/セレクタ/テキスト/メモを部分一致、絞り込み中は並べ替えハンドル無効）。(7) **エクスポート形式**は JSON/CSV/Markdown（復元可は JSON のみ）。並べ替えハンドルは番号バッジ（`badge.draggable`）のみ。
+**マーカーの自動保存（セッション）／メモ／個別色／XPath／ショートカット／絞り込み**。上記の追加機能群: (1) マークは `chrome.storage.session`（キー `mm:auto:<url>`）へ URL 単位で**自動保存**し再注入時に同一 URL なら `restoreMarks`→`importMarks` で**自動復元**する（追加/削除/並べ替え/色/メモ/インポートで `scheduleAutosave`、全消去でキー削除。session 領域は `background.js` の `setAccessLevel` で content から利用可、ブラウザ終了で消える）。(2) 各マークは自由記述の**メモ** `note`（`MM_SET_NOTE`、`sanitizeNote` で上限 `NOTE_MAX`）を持ち、エクスポートにも含む。(3) **個別色**変更 `MM_SET_MARK_COLOR`→`setMarkColor`（既存マークのみ。新規既定色は不変）。(4) セレクタは安定属性（`STABLE_ATTRS`）・一意クラス優先の CSS と **XPath**（`generateXPath`）を両方生成し、panel で形式を切替（`mm:selectorFormat` 永続化）。(5) **キーボードショートカット**（`manifest.json` の `commands`）は background が転送する。マーキングモード切替（既定 `Alt+Shift+M`）は `MM_TOGGLE_ENABLED`→content で反転。次/前マーカーへの移動（既定 `Alt+Shift+Period`/`Alt+Shift+Comma`）は `MM_JUMP`→content の `jumpToMark`。`COMMAND_MESSAGE` マップで command→メッセージを引く。(6) panel の**絞り込み**（`#mm-filter`、タグ/セレクタ/テキスト/メモを部分一致、絞り込み中は並べ替えハンドル無効）。(7) **エクスポート形式**は JSON/CSV/Markdown（復元可は JSON のみ）。並べ替えハンドルは番号バッジ（`badge.draggable`）のみ。
 
 ## 重要な実装上の不変条件
 

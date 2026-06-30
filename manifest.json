@@ -24,6 +24,18 @@
         "default": "Alt+Shift+M"
       },
       "description": "マーキングモードのオン/オフを切り替える"
+    },
+    "jump-next-mark": {
+      "suggested_key": {
+        "default": "Alt+Shift+Period"
+      },
+      "description": "次のマーカーへスクロール"
+    },
+    "jump-prev-mark": {
+      "suggested_key": {
+        "default": "Alt+Shift+Comma"
+      },
+      "description": "前のマーカーへスクロール"
     }
   },
   "side_panel": {

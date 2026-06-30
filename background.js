@@ -27,14 +27,22 @@ chrome.runtime.onStartup.addListener(allowSessionStorageForContent);
 // サービスワーカー起動時にも一度設定しておく（onStartup が来ない再起動に備える）
 allowSessionStorageForContent();
 
-// キーボードショートカットでマーキングモードを切り替える。
-// content が enabled の唯一の保持者なので、background は「反転して」とだけ伝える。
+// キーボードショートカットを content へ転送する。
+// マーキングモードの切替（content が enabled の唯一の保持者）と、
+// 次/前のマーカーへのスクロール移動をアクティブタブの content に伝える。
+const COMMAND_MESSAGE = {
+  "toggle-marking": { type: "MM_TOGGLE_ENABLED" },
+  "jump-next-mark": { type: "MM_JUMP", dir: 1 },
+  "jump-prev-mark": { type: "MM_JUMP", dir: -1 },
+};
+
 chrome.commands?.onCommand.addListener((command) => {
-  if (command !== "toggle-marking") return;
+  const message = COMMAND_MESSAGE[command];
+  if (!message) return;
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     const tab = tabs && tabs[0];
     if (!tab || !tab.id) return;
-    chrome.tabs.sendMessage(tab.id, { type: "MM_TOGGLE_ENABLED" }, () => {
+    chrome.tabs.sendMessage(tab.id, message, () => {
       // 非対応ページ（chrome:// 等）では content が居らずエラーになるため握り潰す
       void chrome.runtime.lastError;
     });
