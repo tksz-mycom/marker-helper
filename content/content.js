@@ -587,9 +587,13 @@
   let captureRestoreTimer = null;
   // 撮影のため一時的に visibility:hidden にした要素（復帰時に元へ戻す）
   let hiddenForCapture = [];
+  // 撮影開始時のスクロール位置。縦長要素のスクロール撮影後に元へ戻すため保持する。
+  let captureOriginScroll = null;
 
   // スクロール後にレイアウト・描画が落ち着くのを待つ時間
   const CAPTURE_SETTLE_MS = 250;
+  // 縦長スクロール撮影は時間がかかるため、保険タイマーは長めに取る
+  const CAPTURE_SAFETY_MS = 8000;
   // requestAnimationFrame + タイマーで再描画の落ち着きを待つ
   function waitForSettle() {
     return new Promise((resolve) => {
@@ -597,10 +601,20 @@
     });
   }
 
+  // panel が復帰メッセージを送れなかった場合に備え、一定時間後に必ず復帰する保険を張り直す
+  function armRestoreTimer() {
+    clearTimeout(captureRestoreTimer);
+    captureRestoreTimer = setTimeout(restoreCapture, CAPTURE_SAFETY_MS);
+  }
+
   async function prepareCapture(id, clean, hideIds) {
     const mark = state.marks.find((m) => m.id === id);
     if (!mark || !document.contains(mark.el)) {
       return { ok: false, reason: "detached" };
+    }
+    // 撮影シーケンス開始時の元スクロール位置を記録（復帰時に戻す）
+    if (!capturing) {
+      captureOriginScroll = { x: window.scrollX, y: window.scrollY };
     }
     // 対象をビューポート中央へ（撮影のため瞬時にスクロール。smooth は使わない）
     mark.el.scrollIntoView({ block: "center", inline: "center" });
@@ -622,17 +636,43 @@
       }
     }
     // panel が復帰メッセージを送れなかった場合の保険（一定時間後に必ず戻す）
-    clearTimeout(captureRestoreTimer);
-    captureRestoreTimer = setTimeout(restoreCapture, 3000);
+    armRestoreTimer();
     await waitForSettle();
     // 待機中に対象が外れた場合は復帰して中止
     if (!document.contains(mark.el)) {
       restoreCapture();
       return { ok: false, reason: "detached" };
     }
+    const vrect = captureRect(mark, clean);
+    // ビューポートより縦に大きい要素は1枚に収まらないため、panel 側でスクロール
+    // 撮影して継ぎ合わせる。そのためページ座標の矩形（スクロール非依存）を返す。
+    const pageRect = {
+      x: vrect.x + window.scrollX,
+      y: vrect.y + window.scrollY,
+      width: vrect.width,
+      height: vrect.height,
+    };
     return {
       ok: true,
-      rect: captureRect(mark, clean),
+      rect: vrect,
+      pageRect,
+      tall: pageRect.height > window.innerHeight,
+      dpr: window.devicePixelRatio || 1,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+    };
+  }
+
+  // 縦長要素の継ぎ合わせ撮影用。指定のページ Y までスクロールし、落ち着いてから
+  // 現在のスクロール位置・ビューポート・dpr を返す（panel が各スライスを切り出す）。
+  async function scrollForCapture(y) {
+    window.scrollTo(0, Math.max(0, Math.round(y)));
+    // 撮影が長引くので保険タイマーを延長し直す
+    armRestoreTimer();
+    await waitForSettle();
+    return {
+      ok: true,
+      scrollX: window.scrollX,
+      scrollY: window.scrollY,
       dpr: window.devicePixelRatio || 1,
       viewport: { width: window.innerWidth, height: window.innerHeight },
     };
@@ -677,6 +717,11 @@
     restoreHidden();
     // ホバー強調枠の抑止を解除（次フレームの syncPositions で必要なら再表示）
     capturing = false;
+    // 撮影で動かしたスクロール位置を元へ戻す
+    if (captureOriginScroll) {
+      window.scrollTo(captureOriginScroll.x, captureOriginScroll.y);
+      captureOriginScroll = null;
+    }
   }
 
   // ---- 状態の直列化と通知 ----------------------------------------------
@@ -845,6 +890,9 @@
         break;
       case "MM_CAPTURE_PREPARE":
         prepareCapture(msg.id, Boolean(msg.clean), msg.hideIds).then(sendResponse);
+        break;
+      case "MM_CAPTURE_SCROLL":
+        scrollForCapture(msg.y).then(sendResponse);
         break;
       case "MM_CAPTURE_RESTORE":
         restoreCapture();

@@ -598,15 +598,30 @@ function importMarksFromFile(file) {
 
 // ---- マーク部分のスクリーンショット ----------------------------------
 
-// ビューポート画像(dataUrl)を rect(CSS px)×dpr で切り出して PNG Blob にする。
-// ビューポート外へはみ出す分はクランプする（縦長要素の見切れは仕様として許容）。
-async function cropToBlob(dataUrl, rect, dpr, viewport) {
-  const img = await new Promise((resolve, reject) => {
+// dataUrl から Image を読み込む。
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);
     im.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
     im.src = dataUrl;
   });
+}
+
+// canvas を PNG Blob 化する。
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("PNGの生成に失敗しました"));
+    }, "image/png");
+  });
+}
+
+// ビューポート画像(dataUrl)を rect(CSS px)×dpr で切り出して PNG Blob にする。
+// ビューポート外へはみ出す分はクランプする（縦長要素の見切れは仕様として許容）。
+async function cropToBlob(dataUrl, rect, dpr, viewport) {
+  const img = await loadImage(dataUrl);
   const left = Math.max(0, rect.x);
   const top = Math.max(0, rect.y);
   const right = Math.min(viewport.width, rect.x + rect.width);
@@ -623,12 +638,58 @@ async function cropToBlob(dataUrl, rect, dpr, viewport) {
   canvas.height = sh;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error("PNGの生成に失敗しました"));
-    }, "image/png");
-  });
+  return canvasToBlob(canvas);
+}
+
+// 縦長要素をスクロールしながら複数回撮影し、1枚の PNG に縦結合する。
+// page はページ座標の切り出し矩形。各スライスを content に依頼したスクロール位置で
+// 撮影し、要素相当の帯を切り出して大きな canvas に積み上げる。
+// 横方向が画面幅を超える分の見切れは許容する（既存の単発撮影と同じ方針）。
+const MAX_CANVAS_PX = 32000; // ブラウザの canvas 寸法上限の安全側
+const CAPTURE_THROTTLE_MS = 350; // captureVisibleTab の呼び出し制限を避ける間隔
+
+async function stitchTallBlob(page, dpr, viewport) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.min(MAX_CANVAS_PX, Math.max(1, Math.round(page.width * dpr)));
+  canvas.height = Math.min(MAX_CANVAS_PX, Math.max(1, Math.round(page.height * dpr)));
+  const ctx = canvas.getContext("2d");
+
+  let filled = 0; // 要素の上端からの埋め済み高さ（CSS px）
+  let guard = 0;
+  while (filled < page.height - 0.5 && guard < 256) {
+    guard++;
+    const sc = await sendToTab({ type: "MM_CAPTURE_SCROLL", y: page.y + filled });
+    if (!sc || !sc.ok) break;
+    await delay(CAPTURE_THROTTLE_MS);
+    const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
+    const img = await loadImage(dataUrl);
+
+    const viewTopPage = sc.scrollY;
+    const bandTopPage = page.y + filled;
+    // ページ末尾でスクロールが頭打ちでも、見えている範囲だけ確実に取り込む
+    const visibleBottomPage = Math.min(page.y + page.height, viewTopPage + viewport.height);
+    const sliceH = visibleBottomPage - bandTopPage;
+    if (sliceH <= 0.5) break;
+
+    let sxImg = Math.round((page.x - sc.scrollX) * dpr);
+    let swImg = Math.round(page.width * dpr);
+    const syImg = Math.round((bandTopPage - viewTopPage) * dpr);
+    const shImg = Math.round(sliceH * dpr);
+    const dyImg = Math.round(filled * dpr);
+    // 横方向のクランプ（画面外へはみ出す分は捨てる）
+    let dxImg = 0;
+    if (sxImg < 0) {
+      dxImg = -sxImg;
+      swImg += sxImg;
+      sxImg = 0;
+    }
+    if (sxImg + swImg > img.width) swImg = img.width - sxImg;
+    if (swImg > 0 && shImg > 0) {
+      ctx.drawImage(img, sxImg, syImg, swImg, shImg, dxImg, dyImg, swImg, shImg);
+    }
+    filled += sliceH;
+  }
+  return canvasToBlob(canvas);
 }
 
 // 対象マークのビューポート画像を取得し、要素部分を切り出した Blob を返す。
@@ -667,6 +728,11 @@ async function captureMarkBlob(mark, clean, hideIds = excludedMarkIds()) {
     return { ok: false, reason: prep?.reason || "prepare" };
   }
   try {
+    // ビューポートより縦に大きい要素はスクロール撮影して継ぎ合わせる
+    if (prep.tall && prep.pageRect) {
+      const blob = await stitchTallBlob(prep.pageRect, prep.dpr, prep.viewport);
+      return { ok: true, blob };
+    }
     const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
     const blob = await cropToBlob(dataUrl, prep.rect, prep.dpr, prep.viewport);
     return { ok: true, blob };
