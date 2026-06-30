@@ -318,7 +318,7 @@ async function reload() {
 
 document.getElementById("mm-copy-all").addEventListener("click", async () => {
   if (currentMarks.length === 0) {
-    showToast("コピーするマークがありません");
+    showToast("コピーするマーカーがありません");
     return;
   }
   const all = currentMarks.map((m) => m.selector).join("\n");
@@ -367,7 +367,7 @@ async function exportMarks() {
     return;
   }
   if (currentMarks.length === 0) {
-    showToast("エクスポートするマークがありません");
+    showToast("エクスポートするマーカーがありません");
     return;
   }
   const res = await sendToTab({ type: "MM_EXPORT_MARKS" });
@@ -384,7 +384,7 @@ async function exportMarks() {
     marks: res.marks || [],
   };
   downloadJson(data, `marker-helper-marks-${todayStamp()}.json`);
-  showToast(`${data.marks.length}件のマークをエクスポートしました`);
+  showToast(`${data.marks.length}件のマーカーをエクスポートしました`);
 }
 
 // 選択されたファイルを読み込み、検証してから content に渡してマークを復元する。
@@ -415,7 +415,7 @@ function importMarksFromFile(file) {
       data.kind !== MARKS_FILE_KIND ||
       !Array.isArray(data.marks)
     ) {
-      showToast("マーク一覧のファイルではありません");
+      showToast("マーカー一覧のファイルではありません");
       return;
     }
     const res = await sendToTab({ type: "MM_IMPORT_MARKS", marks: data.marks });
@@ -427,7 +427,7 @@ function importMarksFromFile(file) {
     if (res.skipped > 0) {
       showToast(`${res.restored}件を復元（${res.skipped}件は対象が見つからず除外）`);
     } else {
-      showToast(`${res.restored}件のマークを復元しました`);
+      showToast(`${res.restored}件のマーカーを復元しました`);
     }
   };
   reader.readAsText(file);
@@ -506,7 +506,7 @@ async function captureMarkBlob(mark, clean) {
 
 // 撮影失敗時の理由に応じたトースト文言
 function captureErrorText(reason) {
-  if (reason === "detached") return "対象が見つかりません（消失したマーク）";
+  if (reason === "detached") return "対象が見つかりません（消失したマーカー）";
   if (reason === "unsupported") return "このページでは利用できません";
   if (reason === "offscreen") return "対象が画面外のため撮影できません";
   return "画像の撮影に失敗しました";
