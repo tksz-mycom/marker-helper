@@ -399,8 +399,10 @@ body {
   display: block;
   margin: var(--space-1) 0;
   padding: 6px 8px;
-  /* 右上のコピーアイコンと文字が重ならないよう右側に余白を確保 */
+  /* 右上のアイコン列と文字が重ならないよう右側に余白を確保 */
   padding-right: 34px;
+  /* 縦に積んだコピー・位置へボタンが収まる高さを確保する */
+  min-height: 52px;
   background: #f4f0ed;
   border-radius: 6px;
   font-family: var(--mono);
@@ -410,16 +412,22 @@ body {
   word-break: break-all;
 }
 
-/* セレクタをコピーするアイコンボタン（表示領域の右上に重ねる） */
-.mm-copy-icon {
+/* セレクタ表示領域の右上に重ねる操作アイコン列（コピー・位置へを縦に並べる） */
+.mm-selector-tools {
   position: absolute;
   top: 8px;
   right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mm-selector-tool {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 24px;
-  height: 24px;
+  height: 22px;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -429,24 +437,24 @@ body {
   transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 
-.mm-copy-icon svg {
+.mm-selector-tool svg {
   width: 13px;
   height: 13px;
 }
 
-.mm-copy-icon:hover {
+.mm-selector-tool:hover {
   color: var(--text);
   border-color: var(--accent);
   background: var(--accent-weak);
 }
 
-.mm-copy-icon.is-done {
+.mm-selector-tool.is-done {
   color: #1f8a3b;
   border-color: #34c75955;
   background: #34c75914;
 }
 
-.mm-copy-icon:focus-visible {
+.mm-selector-tool:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

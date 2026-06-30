@@ -83,19 +83,26 @@
             <span class="mm-tag"></span>
             <span class="mm-detached" hidden>消失</span>
           </div>
-          <!-- セレクタ表示領域。右上にコピー用アイコンボタンを重ねる -->
+          <!-- セレクタ表示領域。右上にコピー・位置へのアイコンボタンを縦に重ねる -->
           <div class="mm-selector-wrap">
             <code class="mm-selector"></code>
-            <button type="button" class="mm-copy-icon mm-act-copy" title="セレクタをコピー" aria-label="セレクタをコピー">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
+            <div class="mm-selector-tools">
+              <button type="button" class="mm-selector-tool mm-act-copy" title="セレクタをコピー" aria-label="セレクタをコピー">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
+              <button type="button" class="mm-selector-tool mm-act-locate" title="要素の位置へ移動" aria-label="要素の位置へ移動">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
+            </div>
           </div>
           <span class="mm-text"></span>
           <div class="mm-item-actions">
-            <button type="button" class="mm-act mm-act-locate">位置へ</button>
             <!-- スクリーンショット関連の操作を1つの帯にまとめて関連を示す -->
             <div class="mm-shot-group" role="group" aria-label="スクリーンショット">
               <svg class="mm-shot-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
