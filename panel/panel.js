@@ -11,6 +11,7 @@ const enabledEl = document.getElementById("mm-enabled");
 const selFormatEl = document.getElementById("mm-selformat");
 const filterEl = document.getElementById("mm-filter");
 const nomatchEl = document.getElementById("mm-nomatch");
+const exportFormatEl = document.getElementById("mm-export-format");
 
 let activeTabId = null;
 
@@ -464,7 +465,54 @@ function downloadJson(data, filename) {
   }
 }
 
-// 現在のマーク一覧（スタイル込み）を content から取得し JSON ファイルに保存する。
+// 任意のテキストをファイルとして保存する（CSV / Markdown 用）。
+function downloadText(text, filename, mime) {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+// 一覧の各行に出力する列（CSV / Markdown 共通）
+const EXPORT_COLUMNS = ["番号", "タグ", "CSSセレクタ", "XPath", "テキスト", "メモ"];
+function exportRow(m) {
+  return [m.label, m.tag, m.selector, m.xpath || "", m.text || "", m.note || ""];
+}
+
+// CSV の1セルをエスケープ（カンマ・引用符・改行を含む場合は引用符で囲む）
+function csvCell(value) {
+  const s = String(value ?? "");
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function buildCsv(marks) {
+  const lines = [EXPORT_COLUMNS.map(csvCell).join(",")];
+  for (const m of marks) lines.push(exportRow(m).map(csvCell).join(","));
+  // Excel での文字化け回避のため BOM を先頭に付ける
+  return `﻿${lines.join("\r\n")}\r\n`;
+}
+
+// Markdown 表のセル（パイプと改行をエスケープ）
+function mdCell(value) {
+  return String(value ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+function buildMarkdown(marks) {
+  const head = `| ${EXPORT_COLUMNS.join(" | ")} |`;
+  const sep = `| ${EXPORT_COLUMNS.map(() => "---").join(" | ")} |`;
+  const rows = marks.map((m) => `| ${exportRow(m).map(mdCell).join(" | ")} |`);
+  return [head, sep, ...rows].join("\n") + "\n";
+}
+
+// 現在のマーク一覧（スタイル込み）を content から取得し、選択形式で保存する。
 async function exportMarks() {
   if (activeTabId == null) {
     showToast("このページでは利用できません");
@@ -479,16 +527,27 @@ async function exportMarks() {
     showToast("エクスポートに失敗しました");
     return;
   }
-  const data = {
-    app: MARKS_FILE_APP,
-    kind: MARKS_FILE_KIND,
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    url: res.url || "",
-    marks: res.marks || [],
-  };
-  downloadJson(data, `marker-helper-marks-${todayStamp()}.json`);
-  showToast(`${data.marks.length}件のマーカーをエクスポートしました`);
+  const marks = res.marks || [];
+  const format = exportFormatEl.value;
+  const base = `marker-helper-marks-${todayStamp()}`;
+
+  if (format === "csv") {
+    downloadText(buildCsv(marks), `${base}.csv`, "text/csv");
+  } else if (format === "md") {
+    downloadText(buildMarkdown(marks), `${base}.md`, "text/markdown");
+  } else {
+    // JSON のみインポートで完全復元できる（スタイル・メモを含む）
+    const data = {
+      app: MARKS_FILE_APP,
+      kind: MARKS_FILE_KIND,
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      url: res.url || "",
+      marks,
+    };
+    downloadJson(data, `${base}.json`);
+  }
+  showToast(`${marks.length}件のマーカーをエクスポートしました`);
 }
 
 // 選択されたファイルを読み込み、検証してから content に渡してマークを復元する。

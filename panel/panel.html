@@ -30,8 +30,17 @@
           <span>すべてクリア</span>
         </button>
       </div>
+      <!-- エクスポート形式。JSON のみインポートで復元できる -->
+      <div class="mm-toolrow">
+        <span class="mm-toolrow-label">エクスポート形式</span>
+        <select id="mm-export-format" class="mm-select" aria-label="エクスポート形式">
+          <option value="json">JSON（復元可）</option>
+          <option value="csv">CSV</option>
+          <option value="md">Markdown</option>
+        </select>
+      </div>
       <div class="mm-bar-actions">
-        <button type="button" id="mm-export" class="mm-icon-btn" title="マーカー一覧をJSONファイルに保存">
+        <button type="button" id="mm-export" class="mm-icon-btn" title="選択した形式でマーカー一覧を保存">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />

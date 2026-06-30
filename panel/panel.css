@@ -240,6 +240,24 @@ body {
   color: var(--muted);
 }
 
+/* エクスポート形式などのセレクト */
+.mm-select {
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mm-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* マーカー絞り込み入力 */
 .mm-filter {
   flex: 1;
