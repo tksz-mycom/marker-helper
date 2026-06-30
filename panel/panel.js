@@ -9,8 +9,29 @@ const toastEl = document.getElementById("mm-toast");
 const includeMarksEl = document.getElementById("mm-shot-marks");
 const enabledEl = document.getElementById("mm-enabled");
 const selFormatEl = document.getElementById("mm-selformat");
+const filterEl = document.getElementById("mm-filter");
+const nomatchEl = document.getElementById("mm-nomatch");
 
 let activeTabId = null;
+
+// 絞り込み文字列（小文字化して部分一致で照合する）。空なら全件表示。
+let filterText = "";
+
+function matchesFilter(mark) {
+  if (!filterText) return true;
+  const haystack = [mark.tag, selectorOf(mark), mark.text, mark.note]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(filterText);
+}
+
+filterEl.addEventListener("input", () => {
+  filterText = filterEl.value.trim().toLowerCase();
+  // 絞り込みの再描画ではフェードイン（点滅）を抑止する
+  suppressAnimOnce = true;
+  render(currentMarks);
+});
 
 // 表示・コピーするセレクタ形式（"css" | "xpath"）。panel 専用の UI 設定として永続化する。
 const SELFORMAT_KEY = "mm:selectorFormat";
@@ -182,7 +203,8 @@ function buildItem(mark) {
   const badge = node.querySelector(".mm-badge");
   // 並べ替えは番号バッジ（ハンドル）からのみ開始する。
   // li 全体を draggable にするとメモ入力のテキスト選択ができなくなるため。
-  badge.draggable = true;
+  // 絞り込み中は一部しか表示されず並べ替えが破綻するためハンドルを無効化する。
+  badge.draggable = !filterText;
   const tag = node.querySelector(".mm-tag");
   const detached = node.querySelector(".mm-detached");
   const selector = node.querySelector(".mm-selector");
@@ -271,19 +293,22 @@ function render(marks) {
   for (const id of [...shotInclOverrides.keys()]) {
     if (!liveIds.has(id)) shotInclOverrides.delete(id);
   }
-  countEl.textContent = String(currentMarks.length);
+  // 絞り込み後の表示対象。件数バッジは「表示/全体」で示す（絞り込み時のみ）。
+  const shown = currentMarks.filter(matchesFilter);
+  countEl.textContent = filterText
+    ? `${shown.length}/${currentMarks.length}`
+    : String(currentMarks.length);
   listEl.classList.toggle("mm-no-anim", suppressAnimOnce);
   suppressAnimOnce = false;
   listEl.replaceChildren();
 
-  if (currentMarks.length === 0) {
-    emptyEl.hidden = false;
-    return;
-  }
-  emptyEl.hidden = true;
+  // マークが1件も無いときの案内と、絞り込みで0件になったときの案内を出し分ける
+  emptyEl.hidden = currentMarks.length !== 0;
+  nomatchEl.hidden = !(currentMarks.length > 0 && shown.length === 0);
+  if (shown.length === 0) return;
 
   const frag = document.createDocumentFragment();
-  for (const mark of currentMarks) frag.appendChild(buildItem(mark));
+  for (const mark of shown) frag.appendChild(buildItem(mark));
   listEl.appendChild(frag);
 }
 

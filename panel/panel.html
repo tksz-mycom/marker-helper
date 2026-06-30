@@ -71,6 +71,10 @@
           <button type="button" data-value="xpath">XPath</button>
         </div>
       </div>
+      <!-- マーカーの絞り込み（タグ・セレクタ・テキスト・メモを対象） -->
+      <div class="mm-toolrow">
+        <input type="search" id="mm-filter" class="mm-filter" placeholder="絞り込み（タグ・セレクタ・テキスト・メモ）" aria-label="マーカーを絞り込み" />
+      </div>
     </header>
 
     <p id="mm-empty" class="mm-empty">
@@ -79,6 +83,8 @@
       ポップアップかこのパネルで<strong>マーキングモード</strong>をオンにして、<br />
       ページ上の要素をクリックしてください。
     </p>
+
+    <p id="mm-nomatch" class="mm-empty" hidden>条件に一致するマーカーがありません。</p>
 
     <ul id="mm-list" class="mm-list"></ul>
 

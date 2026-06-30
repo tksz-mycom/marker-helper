@@ -240,6 +240,29 @@ body {
   color: var(--muted);
 }
 
+/* マーカー絞り込み入力 */
+.mm-filter {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.mm-filter::placeholder {
+  color: var(--muted);
+}
+
+.mm-filter:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
 /* セグメント切替（CSS / XPath など） */
 .mm-segmented {
   display: inline-flex;
