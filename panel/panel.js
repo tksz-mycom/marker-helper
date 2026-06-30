@@ -653,6 +653,57 @@ function buildMarkdown(marks) {
   return [head, sep, ...rows].join("\n") + "\n";
 }
 
+// ---- テストコード出力（Playwright / Cypress） -------------------------
+// 各マークのセレクタから locator を生成し、要素が表示されることを検証する雛形を出力する。
+// 現在の表示形式（CSS/XPath）に従って locator を組む（XPath は対応構文で出す）。
+
+// JS の単一引用符文字列リテラルとして値をエスケープする
+function jsString(value) {
+  return `'${String(value ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+}
+
+// コメント1行に収まるようラベル（メモ/テキスト/タグ）の改行を畳む
+function commentLabel(m) {
+  return String(m.note || m.text || m.tag || "").replace(/\r?\n/g, " ").trim();
+}
+
+// 現在の形式に応じた locator 式を返す。xpath は Playwright が `xpath=` 構文を解する。
+function locatorSnippet(m) {
+  if (selectorFormat === "xpath" && m.xpath) {
+    return { pw: `page.locator(${jsString("xpath=" + m.xpath)})`, cy: `cy.xpath(${jsString(m.xpath)})` };
+  }
+  return { pw: `page.locator(${jsString(m.selector)})`, cy: `cy.get(${jsString(m.selector)})` };
+}
+
+function buildPlaywright(marks, url) {
+  const lines = ["import { test, expect } from '@playwright/test';", "", "test('Marker:HELPER でマークした要素', async ({ page }) => {"];
+  if (url) lines.push(`  await page.goto(${jsString(url)});`);
+  for (const m of marks) {
+    const label = commentLabel(m);
+    lines.push(label ? `  // #${m.label} ${label}` : `  // #${m.label}`);
+    lines.push(`  await expect(${locatorSnippet(m).pw}).toBeVisible();`);
+  }
+  lines.push("});", "");
+  return lines.join("\n");
+}
+
+function buildCypress(marks, url) {
+  const lines = [];
+  // XPath 出力は cypress-xpath プラグインが前提になるため先頭で明示する
+  if (selectorFormat === "xpath") {
+    lines.push("// XPath を使うには cypress-xpath プラグインが必要です（npm i -D cypress-xpath）", "");
+  }
+  lines.push("describe('Marker:HELPER でマークした要素', () => {", "  it('要素が表示されている', () => {");
+  if (url) lines.push(`    cy.visit(${jsString(url)});`);
+  for (const m of marks) {
+    const label = commentLabel(m);
+    lines.push(label ? `    // #${m.label} ${label}` : `    // #${m.label}`);
+    lines.push(`    ${locatorSnippet(m).cy}.should('be.visible');`);
+  }
+  lines.push("  });", "});", "");
+  return lines.join("\n");
+}
+
 // 現在のマーク一覧（スタイル込み）を content から取得し、選択形式で保存する。
 async function exportMarks() {
   if (activeTabId == null) {
@@ -676,6 +727,10 @@ async function exportMarks() {
     downloadText(buildCsv(marks), `${base}.csv`, "text/csv");
   } else if (format === "md") {
     downloadText(buildMarkdown(marks), `${base}.md`, "text/markdown");
+  } else if (format === "pw") {
+    downloadText(buildPlaywright(marks, res.url), `${base}.spec.js`, "text/javascript");
+  } else if (format === "cy") {
+    downloadText(buildCypress(marks, res.url), `${base}.cy.js`, "text/javascript");
   } else {
     // JSON のみインポートで完全復元できる（スタイル・メモを含む）
     const data = {
