@@ -98,14 +98,6 @@ body {
   font-weight: 700;
 }
 
-/* 一覧操作のアイコンツールバー（横幅を抑えるためアイコンのみ） */
-.mm-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
 .mm-tool {
   display: inline-flex;
   align-items: center;
@@ -130,10 +122,6 @@ body {
 .mm-tool:hover {
   background: var(--accent-weak);
   border-color: var(--accent);
-}
-
-.mm-tool-danger {
-  margin-left: auto;
 }
 
 .mm-tool-danger:hover {
@@ -346,7 +334,13 @@ body {
   outline-offset: -2px;
 }
 
-/* ---- 撮影オプション（枠を含めるか） ---- */
+/* ---- 撮影オプション（全画像保存 → 枠を含めるか の順に並べる） ---- */
+.mm-shot-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .mm-shot-opt {
   display: flex;
   align-items: center;
