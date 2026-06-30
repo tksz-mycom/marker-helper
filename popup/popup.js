@@ -436,10 +436,12 @@ function wireEvents() {
     }
   });
 
-  // content からのマーク更新通知で件数を同期
+  // content からのマーク更新通知で件数とマーキングモードの状態を同期
   chrome.runtime.onMessage.addListener((msg, sender) => {
     if (msg?.type === "MM_MARKS_UPDATED" && sender.tab?.id === activeTabId) {
       setCount(msg.marks.length);
+      // パネル側のトグル操作などで変わった enabled をポップアップへ反映する
+      if (typeof msg.enabled === "boolean") els.enabled.checked = msg.enabled;
     }
   });
 }

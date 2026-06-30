@@ -7,6 +7,7 @@ const countEl = document.getElementById("mm-count");
 const tpl = document.getElementById("mm-item-tpl");
 const toastEl = document.getElementById("mm-toast");
 const includeMarksEl = document.getElementById("mm-shot-marks");
+const enabledEl = document.getElementById("mm-enabled");
 
 let activeTabId = null;
 
@@ -48,6 +49,13 @@ includeMarksEl.addEventListener("change", () => {
   saveShotMarks();
   // 未上書きの行を新しい既定値に追従させるため再描画する
   render(currentMarks);
+});
+
+// ---- マーキングモード -------------------------------------------------
+// ポップアップと同じく content の状態を唯一の真実とし、パネルは指示と表示のみ。
+// 切替は MM_SET_ENABLED で content に伝え、状態は MM_GET_STATE / 更新通知で同期する。
+enabledEl.addEventListener("change", () => {
+  sendToTab({ type: "MM_SET_ENABLED", enabled: enabledEl.checked });
 });
 
 // ---- 通信 -------------------------------------------------------------
@@ -288,10 +296,14 @@ async function reload() {
   try {
     const ok = await resolveActiveTab();
     if (!ok) {
+      enabledEl.checked = false;
+      enabledEl.disabled = true;
       render([]);
       return;
     }
     const state = await sendToTab({ type: "MM_GET_STATE" });
+    enabledEl.disabled = false;
+    enabledEl.checked = Boolean(state?.enabled);
     render(state?.marks ?? []);
   } finally {
     reloading = false;
@@ -551,6 +563,8 @@ importFileEl.addEventListener("change", () => {
 // content からの更新通知（アクティブタブのもののみ反映）
 chrome.runtime.onMessage.addListener((msg, sender) => {
   if (msg?.type === "MM_MARKS_UPDATED" && sender.tab?.id === activeTabId) {
+    // ポップアップ側のトグル操作などで変わった enabled をパネルへ反映する
+    if (typeof msg.enabled === "boolean") enabledEl.checked = msg.enabled;
     render(msg.marks);
   }
 });

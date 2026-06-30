@@ -552,7 +552,11 @@
 
   function broadcast() {
     try {
-      chrome.runtime.sendMessage({ type: "MM_MARKS_UPDATED", marks: serializeMarks() });
+      chrome.runtime.sendMessage({
+        type: "MM_MARKS_UPDATED",
+        enabled: state.enabled,
+        marks: serializeMarks(),
+      });
     } catch {
       /* 受信側がいない場合は無視 */
     }
@@ -593,6 +597,8 @@
       ensureLoop();
     }
     syncPositions();
+    // popup / panel 双方のマーキングモードトグルを同期させる
+    broadcast();
   }
 
   function setShowLabel(show) {

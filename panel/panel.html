@@ -48,8 +48,17 @@
           <span>インポート</span>
         </button>
       </div>
-      <!-- マーク一覧ファイル選択用の隠し input -->
+      <!-- マーカー一覧ファイル選択用の隠し input -->
       <input type="file" id="mm-import-file" accept="application/json,.json" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" />
+      <!-- マーキングモード（ポップアップと同じ操作をパネルからも行える） -->
+      <label class="mm-toggle">
+        <span class="mm-toggle-text">
+          <strong>マーキングモード</strong>
+          <small>ホバーで強調・クリックで固定</small>
+        </span>
+        <input type="checkbox" id="mm-enabled" />
+        <span class="mm-switch" aria-hidden="true"></span>
+      </label>
       <label class="mm-shot-opt" title="各マーカーの既定値。行ごとの「マーカー込み」で個別に上書きできる">
         <input type="checkbox" id="mm-shot-marks" />
         <span>スクリーンショットにマーカー・連番ラベルを含める（既定）</span>
