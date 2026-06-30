@@ -15,6 +15,8 @@ UIテストのセレクタ収集、デザインレビューの指摘箇所メモ
 | セレクタコピー | 各行から個別コピー、または「まとめてコピー」で全件を改行区切りで取得 |
 | 位置へ移動 | 一覧から該当要素へスクロール＆点滅 |
 | マーク部分のスクリーンショット | サイドパネルの各マーク項目から「画像保存」「画像コピー」でその要素部分だけを PNG 取得。保存／コピーの両対応、枠・番号の有無をヘッダーのトグルで選択可（`activeTab` 権限を使用） |
+| 連番ラベルの個別表示 | 連番バッジの表示/非表示をマークごとに切替（3状態：常に表示／常に非表示／全体設定に従う）。個別に非表示にしたマークは一覧のバッジに斜線が付く |
+| 一覧の並べ替え | 各行を番号バッジのドラッグ、または左列の上下・最上段・最下段ボタンで並べ替え（スライドアニメ付き）。連番は位置に応じて振り直す |
 
 > マーク状態はセッション内のみ保持します（ページのリロードやタブを閉じると消えます）。
 
@@ -39,6 +41,9 @@ UIテストのセレクタ収集、デザインレビューの指摘箇所メモ
 .
 ├── manifest.json        # 拡張機能の定義（MV3）
 ├── background.js        # service worker（サイドパネル挙動の設定）
+├── shared/              # content/panel/テストで共有する純粋ロジック（両対応モジュール）
+│   ├── label.js         # 連番表示の実効値（3状態）
+│   └── reorderController.js  # 並べ替え確定のタイミング制御
 ├── content/
 │   ├── content.js       # ホバー・クリック・ハイライト・マーク管理
 │   └── content.css      # オーバーレイ・枠・番号バッジのスタイル
@@ -57,6 +62,8 @@ UIテストのセレクタ収集、デザインレビューの指摘箇所メモ
     └── icon128.png
 ```
 
+> `package.json` / `vitest.config.mjs` / `playwright.config.js` と `test/`・`e2e/` はテスト専用（dev 依存）で、拡張機能本体には含まれません（`node_modules` は gitignore）。実行方法は `TESTING.md` を参照。
+
 ## 仕組み（概要）
 
 - **content script** がマーク状態の唯一の保持者（source of truth）。オーバーレイ層（`#mm-overlay-root`、`pointer-events: none`）に枠とバッジを描画し、`requestAnimationFrame` でスクロール・リサイズに追従させます。ページのDOM自体は書き換えません。
@@ -70,6 +77,9 @@ UIテストのセレクタ収集、デザインレビューの指摘箇所メモ
 | `MM_GET_STATE` | popup/panel → content | 現在の `enabled` / `style` / `marks` を取得 |
 | `MM_SET_ENABLED` | popup → content | マークモードのON/OFF |
 | `MM_SET_STYLE` | popup → content | 新規マークに使う色・線種・線幅 |
+| `MM_SET_LABELS` | popup → content | 連番表示のグローバル既定の切替（既存マークの個別設定は上書きしない） |
+| `MM_SET_MARK_LABEL` | panel → content | 指定マークの連番表示を個別に切替 |
+| `MM_REORDER_MARKS` | panel → content | 指定ID順にマークを並べ替え（連番を振り直す） |
 | `MM_CLEAR_ALL` | popup/panel → content | 全マーク削除 |
 | `MM_REMOVE_MARK` | panel → content | 指定IDのマーク削除 |
 | `MM_SCROLL_TO` | panel → content | 指定IDの要素へスクロール |
