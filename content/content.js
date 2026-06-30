@@ -547,6 +547,37 @@
     scheduleAutosave();
   }
 
+  // 既存マークの枠スタイル（色以外も含む）を個別に変更する。patch には
+  // color/lineStyle/width/padding/radius/transparency のうち変更分だけを渡す。
+  // 与えられなかった項目・不正値は現在値を維持する（sanitizeStyle のフォールバック）。
+  // 新規マークの既定スタイル（state.style）には影響しない。
+  function setMarkStyle(id, patch) {
+    if (!patch || typeof patch !== "object") return;
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return;
+    const current = {
+      color: mark.color,
+      lineStyle: mark.lineStyle,
+      width: mark.width,
+      padding: mark.padding,
+      radius: mark.radius,
+      transparency: mark.transparency,
+    };
+    const next = sanitizeStyle({ ...current, ...patch }, current);
+    mark.color = next.color;
+    mark.lineStyle = next.lineStyle;
+    mark.width = next.width;
+    mark.padding = next.padding;
+    mark.radius = next.radius;
+    mark.transparency = next.transparency;
+    mark.badge.style.background = next.color;
+    styleBox(mark.box, mark);
+    // padding は枠の寸法に影響するため、追従ループの次フレームを待たず即時に反映する
+    syncPositions();
+    broadcast();
+    scheduleAutosave();
+  }
+
   function removeMark(id) {
     const i = state.marks.findIndex((m) => m.id === id);
     if (i === -1) return;
@@ -912,6 +943,9 @@
       color: m.color,
       lineStyle: m.lineStyle,
       width: m.width,
+      padding: m.padding,
+      radius: m.radius,
+      transparency: m.transparency,
       detached: !document.contains(m.el),
     }));
   }
@@ -1057,6 +1091,10 @@
         break;
       case "MM_SET_MARK_COLOR":
         setMarkColor(msg.id, msg.color);
+        sendResponse({ ok: true });
+        break;
+      case "MM_SET_MARK_STYLE":
+        setMarkStyle(msg.id, msg.patch);
         sendResponse({ ok: true });
         break;
       case "MM_SET_SELECTOR":

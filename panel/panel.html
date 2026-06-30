@@ -157,10 +157,55 @@
           <!-- マーカーごとの自由記述メモ（注釈）。エクスポートにも含まれる -->
           <input type="text" class="mm-note" maxlength="500" placeholder="メモを追加…" aria-label="メモ" />
           <div class="mm-item-actions">
-            <!-- このマーカーの色を個別に変更する（新規マークの既定色には影響しない） -->
-            <label class="mm-color" title="このマーカーの色を変更">
-              <input type="color" class="mm-act-color" aria-label="マーカーの色" />
-            </label>
+            <!-- 色スウォッチと枠の詳細設定（吹き出し）を1つのクラスタにまとめる -->
+            <div class="mm-style-cluster">
+              <!-- このマーカーの色を個別に変更する（新規マークの既定色には影響しない） -->
+              <label class="mm-color" title="このマーカーの色を変更">
+                <input type="color" class="mm-act-color" aria-label="マーカーの色" />
+              </label>
+              <!-- 既定では非表示の枠設定（線種・線幅・余白・角丸・透明度）を開く歯車ボタン -->
+              <button type="button" class="mm-act-style-toggle" aria-expanded="false" aria-haspopup="dialog" title="枠の詳細設定（線種・線幅・余白・角丸・透明度）" aria-label="枠の詳細設定">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </button>
+              <!-- 枠の詳細設定の吹き出し。既定では非表示で、歯車ボタンで開閉する -->
+              <div class="mm-style-pop" role="dialog" aria-label="枠の詳細設定" hidden>
+                <div class="mm-style-row">
+                  <span class="mm-style-label">透明度</span>
+                  <input type="range" class="mm-range mm-style-transparency" min="0" max="100" step="1" aria-label="透明度" />
+                  <input type="number" class="mm-num mm-style-transparency-num" min="0" max="100" step="1" aria-label="透明度(%)" />
+                  <span class="mm-unit">%</span>
+                </div>
+                <div class="mm-style-row">
+                  <span class="mm-style-label">線種</span>
+                  <div class="mm-segmented mm-style-line" role="radiogroup" aria-label="線種">
+                    <button type="button" data-value="solid">実線</button>
+                    <button type="button" data-value="dashed">破線</button>
+                    <button type="button" data-value="dotted">点線</button>
+                  </div>
+                </div>
+                <div class="mm-style-row">
+                  <span class="mm-style-label">線幅</span>
+                  <input type="range" class="mm-range mm-style-width" min="1" max="20" step="1" aria-label="線幅" />
+                  <input type="number" class="mm-num mm-style-width-num" min="1" max="20" step="1" aria-label="線幅(px)" />
+                  <span class="mm-unit">px</span>
+                </div>
+                <div class="mm-style-row">
+                  <span class="mm-style-label">余白</span>
+                  <input type="range" class="mm-range mm-style-padding" min="0" max="40" step="1" aria-label="余白" />
+                  <input type="number" class="mm-num mm-style-padding-num" min="0" max="40" step="1" aria-label="余白(px)" />
+                  <span class="mm-unit">px</span>
+                </div>
+                <div class="mm-style-row">
+                  <span class="mm-style-label">角丸</span>
+                  <input type="range" class="mm-range mm-style-radius" min="0" max="40" step="1" aria-label="角丸" />
+                  <input type="number" class="mm-num mm-style-radius-num" min="0" max="40" step="1" aria-label="角丸(px)" />
+                  <span class="mm-unit">px</span>
+                </div>
+              </div>
+            </div>
             <!-- スクリーンショット関連の操作を1つの帯にまとめて関連を示す -->
             <div class="mm-shot-group" role="group" aria-label="スクリーンショット">
               <svg class="mm-shot-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

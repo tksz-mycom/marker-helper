@@ -800,6 +800,139 @@ body {
   outline-offset: 1px;
 }
 
+/* ---- 枠の詳細設定（吹き出し） ---- */
+/* 色スウォッチと歯車ボタンを並べ、吹き出しの位置基準にする */
+.mm-style-cluster {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 枠設定（線種・線幅・余白・角丸・透明度）を開く歯車ボタン。色スウォッチと寸法をそろえる */
+.mm-act-style-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.mm-act-style-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mm-act-style-toggle:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.mm-act-style-toggle.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.mm-act-style-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* 吹き出し本体。歯車の上に重ねて表示する（カード本文の上に被さる） */
+.mm-style-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 5;
+  width: 234px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+/* display:flex が UA の [hidden]{display:none} を上書きするため明示的に閉じる */
+.mm-style-pop[hidden] {
+  display: none;
+}
+
+/* 吹き出しのしっぽ（歯車側へ向ける三角） */
+.mm-style-pop::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 18px;
+  border: 7px solid transparent;
+  border-top-color: var(--surface);
+}
+
+.mm-style-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mm-style-label {
+  flex: none;
+  width: 38px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.mm-style-row .mm-segmented {
+  flex: 1;
+}
+
+.mm-style-row .mm-segmented button {
+  flex: 1;
+  padding: 4px 0;
+}
+
+.mm-style-pop .mm-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.mm-style-pop .mm-num {
+  flex: none;
+  width: 44px;
+  padding: 3px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  text-align: right;
+}
+
+.mm-style-pop .mm-num:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.mm-style-pop .mm-unit {
+  flex: none;
+  width: 16px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
 /* 行ごとの「マーカー込み」上書きチェック */
 .mm-shot-incl {
   display: inline-flex;

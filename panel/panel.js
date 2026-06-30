@@ -419,6 +419,95 @@ function applyGroupChip(node, mark) {
   chip.style.background = `hsl(${hue} 70% 92%)`;
 }
 
+// number 入力を min/max でクランプして整数値を返す（範囲外入力の保険）。
+function clampNumInput(input) {
+  const min = Number(input.min);
+  const max = Number(input.max);
+  let v = Math.round(Number(input.value));
+  if (!Number.isFinite(v)) v = min;
+  v = Math.max(min, Math.min(max, v));
+  input.value = String(v);
+  return v;
+}
+
+// 枠の詳細設定（吹き出し）の開閉と各コントロールを配線する。
+// 各変更は MM_SET_MARK_STYLE の patch（変更分のみ）で content へ送る。content が
+// 検証・即時反映し broadcast するため、再描画後は openStyleEditId 一致行で開き直す。
+function wireStyleEditor(node, mark) {
+  const toggle = node.querySelector(".mm-act-style-toggle");
+  const pop = node.querySelector(".mm-style-pop");
+
+  // 再描画をまたいでも、直前に開いていた行は開いたまま復元する
+  const isOpen = openStyleEditId === mark.id;
+  pop.hidden = !isOpen;
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  toggle.classList.toggle("is-active", isOpen);
+
+  toggle.addEventListener("click", () => {
+    const willOpen = pop.hidden;
+    // 同時に複数の吹き出しが開かないよう、他の行の開いた吹き出しは閉じる
+    if (willOpen) {
+      for (const other of listEl.querySelectorAll(".mm-style-pop")) {
+        if (other !== pop) {
+          other.hidden = true;
+          const t = other.parentElement.querySelector(".mm-act-style-toggle");
+          if (t) {
+            t.setAttribute("aria-expanded", "false");
+            t.classList.remove("is-active");
+          }
+        }
+      }
+    }
+    openStyleEditId = willOpen ? mark.id : null;
+    pop.hidden = !willOpen;
+    toggle.setAttribute("aria-expanded", String(willOpen));
+    toggle.classList.toggle("is-active", willOpen);
+  });
+
+  // 確定値を content へ送る。再描画のフェードイン（点滅）は抑止する。
+  const sendPatch = (patch) => {
+    suppressAnimOnce = true;
+    sendToTab({ type: "MM_SET_MARK_STYLE", id: mark.id, patch });
+  };
+
+  // 線種セグメント（実線/破線/点線）。クリックで即時に確定する。
+  const lineSeg = pop.querySelector(".mm-style-line");
+  for (const btn of lineSeg.querySelectorAll("button")) {
+    btn.classList.toggle("is-active", btn.dataset.value === mark.lineStyle);
+    btn.addEventListener("click", () => {
+      if (btn.classList.contains("is-active")) return;
+      for (const b of lineSeg.querySelectorAll("button")) b.classList.toggle("is-active", b === btn);
+      sendPatch({ lineStyle: btn.dataset.value });
+    });
+  }
+
+  // 数値系（線幅/余白/角丸/透明度）。range と number を同期し、確定時（change）に送る。
+  // ドラッグ中（input）は相方の数値表示だけ更新し、再描画を伴う送信は行わない。
+  const bindNum = (rangeSel, numSel, field, value) => {
+    const range = pop.querySelector(rangeSel);
+    const num = pop.querySelector(numSel);
+    range.value = String(value);
+    num.value = String(value);
+    range.addEventListener("input", () => {
+      num.value = range.value;
+    });
+    num.addEventListener("input", () => {
+      range.value = num.value;
+    });
+    range.addEventListener("change", () => sendPatch({ [field]: Number(range.value) }));
+    num.addEventListener("change", () => {
+      const v = clampNumInput(num);
+      range.value = String(v);
+      sendPatch({ [field]: v });
+    });
+  };
+
+  bindNum(".mm-style-width", ".mm-style-width-num", "width", mark.width);
+  bindNum(".mm-style-padding", ".mm-style-padding-num", "padding", mark.padding);
+  bindNum(".mm-style-radius", ".mm-style-radius-num", "radius", mark.radius);
+  bindNum(".mm-style-transparency", ".mm-style-transparency-num", "transparency", mark.transparency);
+}
+
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = String(mark.id);
@@ -495,6 +584,10 @@ function buildItem(mark) {
     sendToTab({ type: "MM_SET_MARK_COLOR", id: mark.id, color: colorEl.value });
   });
 
+  // 枠の詳細設定（線種・線幅・余白・角丸・透明度）を歯車ボタンで開閉する吹き出し。
+  // 既定では非表示。色と同じく確定時に content へ送り、新規マークの既定スタイルには影響しない。
+  wireStyleEditor(node, mark);
+
   // グループ名チップを表示し、入力で変更できるようにする。
   applyGroupChip(node, mark);
   const groupEl = node.querySelector(".mm-group");
@@ -544,6 +637,8 @@ let currentMarks = [];
 let suppressAnimOnce = false;
 // ドラッグ中は再描画を抑止し、掴んでいる要素が破棄されないようにする
 let isDragging = false;
+// 枠の詳細設定（吹き出し）が開いている行の id。再描画をまたいで開いたままにする。
+let openStyleEditId = null;
 
 function render(marks) {
   // ドラッグ操作中の再描画は掴んだ要素を消してしまうため抑止する。
@@ -555,6 +650,8 @@ function render(marks) {
   for (const id of [...shotInclOverrides.keys()]) {
     if (!liveIds.has(id)) shotInclOverrides.delete(id);
   }
+  // 開いていた枠設定の対象が消えていたら開閉状態も破棄する
+  if (openStyleEditId != null && !liveIds.has(openStyleEditId)) openStyleEditId = null;
   // 絞り込み後の表示対象。件数バッジは「表示/全体」で示す（絞り込み時のみ）。
   const shown = currentMarks.filter(matchesFilter);
   countEl.textContent = filterText
