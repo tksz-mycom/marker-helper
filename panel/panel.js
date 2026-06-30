@@ -458,9 +458,25 @@ async function cropToBlob(dataUrl, rect, dpr, viewport) {
 
 // 対象マークのビューポート画像を取得し、要素部分を切り出した Blob を返す。
 // clean=true なら枠・番号を含めない。撮影後は必ず content の表示を復帰させる。
+// 「マーカー込み」が未チェックの行の id を集める。撮影時に枠・番号を隠す対象。
+// 1枚の画像に複数マークが写り込むため、各マークの設定を個別に反映させる。
+function excludedMarkIds() {
+  const ids = [];
+  listEl.querySelectorAll(".mm-item").forEach((li) => {
+    const cb = li.querySelector(".mm-act-shot-incl");
+    if (cb && !cb.checked) ids.push(Number(li.dataset.id));
+  });
+  return ids;
+}
+
 async function captureMarkBlob(mark, clean) {
   if (activeTabId == null) return { ok: false, reason: "unsupported" };
-  const prep = await sendToTab({ type: "MM_CAPTURE_PREPARE", id: mark.id, clean });
+  const prep = await sendToTab({
+    type: "MM_CAPTURE_PREPARE",
+    id: mark.id,
+    clean,
+    hideIds: excludedMarkIds(),
+  });
   if (!prep || !prep.ok) {
     return { ok: false, reason: prep?.reason || "prepare" };
   }

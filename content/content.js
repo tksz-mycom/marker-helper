@@ -415,9 +415,12 @@
   }
 
   // ---- スクショ撮影の下準備（panel から呼ばれる） ----------------------
-  // panel は「下準備 → captureVisibleTab → 復帰」の順で呼ぶ。clean=true の
-  // 場合は枠・番号のオーバーレイ層を一時的に隠し、素の要素だけを写せるようにする。
+  // panel は「下準備 → captureVisibleTab → 復帰」の順で呼ぶ。撮影画像に同時に
+  // 写り込む各マークの枠・番号は、panel の「マーカー込み」設定（=hideIds に列挙
+  // された未チェックのマーク）だけを一時的に隠し、チェック済みは表示のまま写す。
   let captureRestoreTimer = null;
+  // 撮影のため一時的に visibility:hidden にした要素（復帰時に元へ戻す）
+  let hiddenForCapture = [];
 
   // スクロール後にレイアウト・描画が落ち着くのを待つ時間
   const CAPTURE_SETTLE_MS = 250;
@@ -428,15 +431,27 @@
     });
   }
 
-  async function prepareCapture(id, clean) {
+  async function prepareCapture(id, clean, hideIds) {
     const mark = state.marks.find((m) => m.id === id);
     if (!mark || !document.contains(mark.el)) {
       return { ok: false, reason: "detached" };
     }
     // 対象をビューポート中央へ（撮影のため瞬時にスクロール。smooth は使わない）
     mark.el.scrollIntoView({ block: "center", inline: "center" });
-    if (clean && root) {
-      root.style.visibility = "hidden";
+    // 直前の撮影で隠した要素が残っていれば先に復帰してから隠し直す
+    restoreHidden();
+    // 未チェック（hideIds に列挙）のマークだけ枠・番号を隠す。後方互換として
+    // hideIds 未指定で clean のときは対象のみ隠す（従来の単体撮影と同等）。
+    const hideSet = new Set(Array.isArray(hideIds) ? hideIds : []);
+    if (!Array.isArray(hideIds) && clean) hideSet.add(id);
+    for (const m of state.marks) {
+      if (!hideSet.has(m.id)) continue;
+      for (const el of [m.box, m.badge]) {
+        if (el && el.style.visibility !== "hidden") {
+          hiddenForCapture.push(el);
+          el.style.visibility = "hidden";
+        }
+      }
     }
     // panel が復帰メッセージを送れなかった場合の保険（一定時間後に必ず戻す）
     clearTimeout(captureRestoreTimer);
@@ -480,10 +495,18 @@
     return { x: left, y: top, width: right - left, height: bottom - top };
   }
 
+  // 撮影のため隠した要素を元の表示状態へ戻す
+  function restoreHidden() {
+    for (const el of hiddenForCapture) {
+      if (el) el.style.visibility = "";
+    }
+    hiddenForCapture = [];
+  }
+
   function restoreCapture() {
     clearTimeout(captureRestoreTimer);
     captureRestoreTimer = null;
-    if (root) root.style.visibility = "";
+    restoreHidden();
   }
 
   // ---- 状態の直列化と通知 ----------------------------------------------
@@ -628,7 +651,7 @@
         sendResponse({ ok: true });
         break;
       case "MM_CAPTURE_PREPARE":
-        prepareCapture(msg.id, Boolean(msg.clean)).then(sendResponse);
+        prepareCapture(msg.id, Boolean(msg.clean), msg.hideIds).then(sendResponse);
         break;
       case "MM_CAPTURE_RESTORE":
         restoreCapture();
