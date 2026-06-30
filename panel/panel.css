@@ -279,6 +279,7 @@ body {
 }
 
 .mm-item {
+  position: relative;
   display: flex;
   gap: 10px;
   padding: 11px 12px;
@@ -333,6 +334,43 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+  /* 右上の×（クリア）ボタンとタグ名が重ならないよう余白を確保 */
+  padding-right: 24px;
+}
+
+/* マーカー設定を閉じる（クリア）×ボタン。ウィンドウの閉じるボタン風に右上へ置く */
+.mm-item-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.mm-item-close svg {
+  width: 14px;
+  height: 14px;
+}
+
+.mm-item-close:hover {
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.mm-item-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .mm-tag {
@@ -352,10 +390,17 @@ body {
   border-radius: 6px;
 }
 
+/* セレクタ表示領域。右上にコピーアイコンを重ねる */
+.mm-selector-wrap {
+  position: relative;
+}
+
 .mm-selector {
   display: block;
   margin: var(--space-1) 0;
   padding: 6px 8px;
+  /* 右上のコピーアイコンと文字が重ならないよう右側に余白を確保 */
+  padding-right: 34px;
   background: #f4f0ed;
   border-radius: 6px;
   font-family: var(--mono);
@@ -363,6 +408,47 @@ body {
   color: #324;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* セレクタをコピーするアイコンボタン（表示領域の右上に重ねる） */
+.mm-copy-icon {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.mm-copy-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mm-copy-icon:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: var(--accent-weak);
+}
+
+.mm-copy-icon.is-done {
+  color: #1f8a3b;
+  border-color: #34c75955;
+  background: #34c75914;
+}
+
+.mm-copy-icon:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 
 .mm-text {
@@ -405,6 +491,31 @@ body {
   background: var(--surface);
 }
 
+/* 「保存」「コピー」を境界線を共有してくっつけたセグメント表示にする */
+.mm-shot-btns {
+  display: inline-flex;
+}
+
+.mm-shot-btns .mm-act {
+  border-radius: 0;
+}
+
+.mm-shot-btns .mm-act:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.mm-shot-btns .mm-act:last-child {
+  border-radius: 0 6px 6px 0;
+  /* 隣り合う枠線を重ねて1本に見せる */
+  margin-left: -1px;
+}
+
+/* ホバー中のボタンを前面に出して枠線が欠けないようにする */
+.mm-shot-btns .mm-act:hover {
+  position: relative;
+  z-index: 1;
+}
+
 /* 行ごとの「マーカー込み」上書きチェック */
 .mm-shot-incl {
   display: inline-flex;
@@ -441,23 +552,6 @@ body {
   color: var(--text);
   border-color: var(--accent);
   background: var(--accent-weak);
-}
-
-/* クリア（単体削除）だけ右端へ寄せ、他のアクションと視覚的に分離する */
-.mm-act-delete {
-  margin-left: auto;
-}
-
-.mm-act-delete:hover {
-  color: #fff;
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.mm-act.is-done {
-  color: #1f8a3b;
-  border-color: #34c75955;
-  background: #34c75914;
 }
 
 .mm-act:focus-visible {

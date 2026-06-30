@@ -138,17 +138,14 @@ function buildItem(mark) {
   text.textContent = mark.text || "（テキストなし）";
   detached.hidden = !mark.detached;
 
+  // アイコンボタンのためテキストは差し替えず、成功時は緑のチェック状態（is-done）で示す
   const copyBtn = node.querySelector(".mm-act-copy");
   copyBtn.addEventListener("click", async () => {
     const ok = await copyText(mark.selector);
     if (ok) {
-      copyBtn.textContent = "コピー済";
       copyBtn.classList.add("is-done");
       showToast(`#${mark.label} のセレクタをコピーしました`);
-      setTimeout(() => {
-        copyBtn.textContent = "コピー";
-        copyBtn.classList.remove("is-done");
-      }, 1200);
+      setTimeout(() => copyBtn.classList.remove("is-done"), 1200);
     } else {
       showToast("コピーに失敗しました");
     }
@@ -176,7 +173,7 @@ function buildItem(mark) {
     copyImage(mark, !shotIncl.checked);
   });
 
-  node.querySelector(".mm-act-delete").addEventListener("click", () => {
+  node.querySelector(".mm-item-close").addEventListener("click", () => {
     sendToTab({ type: "MM_REMOVE_MARK", id: mark.id });
     // 応答の broadcast で再描画されるが、即時反映も行う
     node.remove();

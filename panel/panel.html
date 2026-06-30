@@ -83,10 +83,18 @@
             <span class="mm-tag"></span>
             <span class="mm-detached" hidden>消失</span>
           </div>
-          <code class="mm-selector"></code>
+          <!-- セレクタ表示領域。右上にコピー用アイコンボタンを重ねる -->
+          <div class="mm-selector-wrap">
+            <code class="mm-selector"></code>
+            <button type="button" class="mm-copy-icon mm-act-copy" title="セレクタをコピー" aria-label="セレクタをコピー">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+            </button>
+          </div>
           <span class="mm-text"></span>
           <div class="mm-item-actions">
-            <button type="button" class="mm-act mm-act-copy">コピー</button>
             <button type="button" class="mm-act mm-act-locate">位置へ</button>
             <!-- スクリーンショット関連の操作を1つの帯にまとめて関連を示す -->
             <div class="mm-shot-group" role="group" aria-label="スクリーンショット">
@@ -98,12 +106,21 @@
                 <input type="checkbox" class="mm-act-shot-incl" />
                 <span>マーカー込み</span>
               </label>
-              <button type="button" class="mm-act mm-act-shot">画像保存</button>
-              <button type="button" class="mm-act mm-act-shot-copy">画像コピー</button>
+              <!-- 「保存」「コピー」をくっつけたセグメント表示 -->
+              <div class="mm-shot-btns">
+                <button type="button" class="mm-act mm-act-shot">保存</button>
+                <button type="button" class="mm-act mm-act-shot-copy">コピー</button>
+              </div>
             </div>
-            <button type="button" class="mm-act mm-act-delete">クリア</button>
           </div>
         </div>
+        <!-- マーカー設定を閉じる（クリア）。ウィンドウの×のように右上へ配置 -->
+        <button type="button" class="mm-item-close" title="このマーカーをクリア" aria-label="このマーカーをクリア">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
       </li>
     </template>
 
