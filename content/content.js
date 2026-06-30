@@ -95,6 +95,59 @@
     }
   }
 
+  // ---- マークの自動保存（セッション） -----------------------------------
+  // マーク本体は従来「タブ内メモリのみ」だったが、誤リロードでの消失を防ぐため
+  // chrome.storage.session に URL 単位で自動保存し、再注入時に同一 URL なら復元する。
+  // session 領域はブラウザ終了で消えるため「セッション中だけ生存」の性質は保たれる。
+  // （content から session を使うため background で setAccessLevel 済み。未許可環境では
+  //  例外を握り潰して従来どおりメモリのみで動作する。）
+  const AUTOSAVE_PREFIX = "mm:auto:";
+  const AUTOSAVE_DEBOUNCE_MS = 400;
+
+  function autosaveKey() {
+    return AUTOSAVE_PREFIX + location.href;
+  }
+
+  function saveMarks() {
+    try {
+      const session = chrome.storage.session;
+      if (!session) return;
+      const key = autosaveKey();
+      const marks = serializeMarksForExport();
+      if (marks.length === 0) {
+        session.remove(key, () => void chrome.runtime.lastError);
+        return;
+      }
+      session.set({ [key]: { url: location.href, marks } }, () => void chrome.runtime.lastError);
+    } catch {
+      /* session 未許可など。メモリのみで継続する */
+    }
+  }
+
+  let autosaveTimer = null;
+  function scheduleAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(saveMarks, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  // 再注入（リロード・SPA再評価）時に、同一 URL の保存があれば復元する。
+  function restoreMarks() {
+    try {
+      const session = chrome.storage.session;
+      if (!session) return;
+      session.get(autosaveKey(), (data) => {
+        if (chrome.runtime.lastError) return;
+        const saved = data && data[autosaveKey()];
+        if (!saved || !Array.isArray(saved.marks) || saved.marks.length === 0) return;
+        // まだ何もマークしていないときだけ復元する（ユーザー操作を上書きしない）
+        if (state.marks.length > 0) return;
+        importMarks(saved.marks);
+      });
+    } catch {
+      /* 無視 */
+    }
+  }
+
   // ---- オーバーレイ構築 -------------------------------------------------
 
   let root = null;
@@ -397,6 +450,7 @@
     ensureLoop();
     syncPositions();
     broadcast();
+    scheduleAutosave();
   }
 
   // 一覧（エクスポートしたJSON）からマークを復元する。
@@ -435,6 +489,7 @@
     ensureLoop();
     syncPositions();
     broadcast();
+    scheduleAutosave();
     return { ok: true, restored, skipped };
   }
 
@@ -467,6 +522,7 @@
     relabel();
     syncPositions();
     broadcast();
+    scheduleAutosave();
   }
 
   // 既存マークの色だけを変更する（新規マークの既定スタイルには影響しない）。
@@ -479,6 +535,7 @@
     mark.badge.style.background = color;
     styleBox(mark.box, mark);
     broadcast();
+    scheduleAutosave();
   }
 
   function removeMark(id) {
@@ -489,6 +546,7 @@
     mark.badge.remove();
     relabel();
     broadcast();
+    scheduleAutosave();
   }
 
   function clearAll() {
@@ -499,6 +557,7 @@
     state.marks = [];
     state.counter = 0;
     broadcast();
+    scheduleAutosave();
   }
 
   // 指定マークのメモ（注釈）を更新する。表示要素には影響しないため再描画は不要。
@@ -508,6 +567,7 @@
     const mark = state.marks.find((m) => m.id === id);
     if (!mark) return;
     mark.note = sanitizeNote(note);
+    scheduleAutosave();
   }
 
   function scrollToMark(id) {
@@ -800,4 +860,6 @@
 
   // 保存済みの設定（スタイル・ラベル表示）を復元する
   restoreSettings();
+  // 同一 URL に自動保存されたマークがあれば復元する（誤リロードからの復帰）
+  restoreMarks();
 })();
