@@ -230,6 +230,73 @@ async function copyText(text) {
   }
 }
 
+// セレクタ貼り替えの失敗理由（content の reason）に対応する日本語メッセージ
+const SELECTOR_ERROR = {
+  empty: "セレクタが空です",
+  nomatch: "一致する要素が見つかりません",
+  own: "拡張機能自身の要素は指定できません",
+  notfound: "対象のマークが見つかりません",
+};
+
+// セレクタ表示の <code> を直接編集できるようにする。Enter / フォーカス外しで確定し、
+// その文字列で要素を再特定して貼り替える。空・不一致・不正時は元の表示へ戻す。
+function setupSelectorEdit(selector, mark) {
+  const original = selectorOf(mark);
+  selector.textContent = original;
+  selector.setAttribute("contenteditable", "plaintext-only");
+  selector.setAttribute("spellcheck", "false");
+  selector.setAttribute("role", "textbox");
+  selector.setAttribute("aria-label", "セレクタ（クリックで編集）");
+  selector.title = "クリックして編集（Enterで確定／Escで取消）";
+
+  let committing = false;
+  const revert = () => {
+    selector.textContent = original;
+  };
+
+  const commit = async () => {
+    if (committing) return;
+    const value = (selector.textContent || "").trim();
+    // 変更なしは表示を整えるだけ（前後の空白や改行を取り除く）
+    if (value === original) {
+      selector.textContent = original;
+      return;
+    }
+    if (!value) {
+      revert();
+      showToast(SELECTOR_ERROR.empty);
+      return;
+    }
+    committing = true;
+    const res = await sendToTab({
+      type: "MM_SET_SELECTOR",
+      id: mark.id,
+      value,
+      format: selectorFormat,
+    });
+    committing = false;
+    if (res && res.ok) {
+      // 成功時は content の broadcast による再描画で最新表示へ更新される
+      showToast(`#${mark.label} の要素を貼り替えました`);
+    } else {
+      revert();
+      showToast(SELECTOR_ERROR[res?.reason] || "セレクタを適用できません");
+    }
+  };
+
+  selector.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      selector.blur(); // blur で commit
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      revert();
+      selector.blur();
+    }
+  });
+  selector.addEventListener("blur", commit);
+}
+
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = String(mark.id);
@@ -246,7 +313,8 @@ function buildItem(mark) {
   badge.textContent = String(mark.label);
   badge.style.background = mark.color;
   tag.textContent = mark.tag;
-  selector.textContent = selectorOf(mark);
+  // セレクタ文字列は直接編集できる。確定でその文字列により要素を貼り替える。
+  setupSelectorEdit(selector, mark);
   text.textContent = mark.text || "（テキストなし）";
   detached.hidden = !mark.detached;
 

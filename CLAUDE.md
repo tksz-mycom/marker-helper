@@ -43,6 +43,7 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 | `MM_REMOVE_MARK` | panel → content | 指定IDのマーク削除 |
 | `MM_REORDER_MARKS` | panel → content | 指定ID順にマークを並べ替え（連番ラベルを入替え） |
 | `MM_SCROLL_TO` | panel → content | 指定IDの要素へスクロール＆点滅 |
+| `MM_SET_SELECTOR` | panel → content | 編集したセレクタ文字列（`value`/`format`）で要素を再特定し、見つかればそのマークを貼り替える。`{ok,reason}` を返す |
 | `MM_EXPORT_MARKS` | panel → content | 復元用にマーク一覧（全スタイル）と `location.href` を取得（保存は panel が実施） |
 | `MM_IMPORT_MARKS` | panel → content | JSONのマーク一覧を渡して復元。各 selector で要素を再特定し `{ok,restored,skipped}` を返す |
 | `MM_CAPTURE_PREPARE` | panel → content | 撮影下準備。対象を中央へスクロールし、`hideIds`（未チェックのマーク）の枠/番号だけを一時非表示にして矩形(`rect`/`dpr`/`viewport`)を返す |
@@ -75,6 +76,8 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 ## セレクタ生成（content.js `generateSelector`）
 
 一意な `id` があれば `#id` を最優先。無ければ `tag:nth-of-type(n)` を `body` まで遡って ` > ` 連結。動的ページでは安定しないことがある（README「制限事項」参照）。
+
+**セレクタの手動編集（panel 専用）**。自動生成セレクタが不安定な場合に備え、panel の一覧の各行のセレクタ表示（`.mm-selector` の `<code>`、`contenteditable="plaintext-only"`）を**直接編集**できる。確定（Enter またはフォーカス外し、Esc で取消）で `MM_SET_SELECTOR` を送り、content の `setMarkSelector` が **編集した文字列で要素を再特定して貼り替える**（CSS は `document.querySelector`、XPath は `document.evaluate` の `resolveBySelector`。現在の `selectorFormat` を `format` として渡す）。再特定できた要素に `mark.el` を差し替え、`tag`/`text`/追従位置を新要素へ合わせ、編集した形式の文字列はそのまま採用・もう一方は新要素から再生成する。空・不一致・不正セレクタ・拡張機能自身の要素は貼り替えず `{ok:false, reason}` を返し、panel は元の表示へ戻してトーストで通知する。マークは要素参照で追従する不変条件に沿うため、編集は「文字列の上書き」ではなく「要素の貼り替え」として実装している。
 
 ## コード規約
 

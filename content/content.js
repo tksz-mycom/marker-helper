@@ -570,6 +570,52 @@
     scheduleAutosave();
   }
 
+  // セレクタ文字列で要素を再特定する。CSS は querySelector、XPath は evaluate。
+  // 不正なセレクタは例外になるため null を返す（呼び出し側で失敗扱いにする）。
+  function resolveBySelector(value, isXPath) {
+    try {
+      if (isXPath) {
+        const r = document.evaluate(value, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+        return r.singleNodeValue instanceof Element ? r.singleNodeValue : null;
+      }
+      const el = document.querySelector(value);
+      return el instanceof Element ? el : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // 指定マークのセレクタ（CSS/XPath）を編集し、その文字列で要素を再特定して貼り替える。
+  // タグ・テキスト・追従位置は新要素に合わせ直す。編集した形式の文字列はそのまま採用し、
+  // もう一方の形式は新要素から生成し直して整合させる。見つからない／不正なセレクタや
+  // 拡張機能自身の要素は貼り替えず、理由付きで失敗を返す（panel が元の表示へ戻す）。
+  function setMarkSelector(id, value, format) {
+    const mark = state.marks.find((m) => m.id === id);
+    if (!mark) return { ok: false, reason: "notfound" };
+    const raw = typeof value === "string" ? value.trim() : "";
+    if (!raw) return { ok: false, reason: "empty" };
+    const isXPath = format === "xpath";
+    const el = resolveBySelector(raw, isXPath);
+    if (!el) return { ok: false, reason: "nomatch" };
+    if (isOwnNode(el)) return { ok: false, reason: "own" };
+
+    mark.el = el;
+    mark.tag = describeTag(el);
+    mark.text = snippet(el);
+    if (isXPath) {
+      mark.xpath = raw;
+      mark.selector = generateSelector(el);
+    } else {
+      mark.selector = raw;
+      mark.xpath = generateXPath(el);
+    }
+    ensureLoop();
+    syncPositions();
+    broadcast();
+    scheduleAutosave();
+    return { ok: true };
+  }
+
   function scrollToMark(id) {
     const mark = state.marks.find((m) => m.id === id);
     if (!mark || !document.contains(mark.el)) return;
@@ -879,6 +925,9 @@
       case "MM_SET_MARK_COLOR":
         setMarkColor(msg.id, msg.color);
         sendResponse({ ok: true });
+        break;
+      case "MM_SET_SELECTOR":
+        sendResponse(setMarkSelector(msg.id, msg.value, msg.format));
         break;
       case "MM_REORDER_MARKS":
         reorderMarks(msg.ids);
