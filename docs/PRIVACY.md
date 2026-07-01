@@ -3,11 +3,11 @@
 **[English](#english)** | **[日本語](#日本語)**
 
 > **[Fill in / 記入欄]** Replace before publishing / 公開前に差し替えてください:
-> - Effective date / 発効日: `YYYY-MM-DD`
-> - Contact email / 連絡先メール: `your-email@example.com`
-> - Public URL / 公開URL: Host this file (e.g. GitHub Pages) and register the URL in the Chrome Web Store dashboard. / 本ファイルを GitHub Pages 等で公開し、その URL をダッシュボードに登録する。
+> - Effective date / 発効日: `2026-07-01`
+> - Contact email / 連絡先メール: `squikole@gmail.com`
+> - Public URL / 公開URL: `https://tksz-mycom.github.io/marker-helper/PRIVACY` (after enabling GitHub Pages / GitHub Pages 有効化後)
 
-**Last updated / 最終更新日: YYYY-MM-DD**
+**Last updated / 最終更新日: 2026-07-01**
 
 ---
 
@@ -73,7 +73,7 @@ This policy may be revised without prior notice. When material changes are made,
 
 For inquiries regarding this policy or the Extension, please contact:
 
-- Email: `your-email@example.com`
+- Email: `squikole@gmail.com`
 
 ---
 
@@ -139,8 +139,8 @@ For inquiries regarding this policy or the Extension, please contact:
 
 本ポリシーまたは本拡張に関するお問い合わせは、以下までご連絡ください。
 
-- メール: `your-email@example.com`
+- メール: `squikole@gmail.com`
 
 ---
 
-> **Hosting example / 公開方法の例**: Publishing via GitHub Pages produces a URL like `https://<username>.github.io/<repository>/PRIVACY`. Register it under "Privacy" → "Privacy policy URL". / GitHub Pages で公開すると `https://<ユーザー名>.github.io/<リポジトリ名>/PRIVACY` のような URL になります。「プライバシー」→「プライバシーポリシーの URL」に登録してください。
+> **Hosting example / 公開方法の例**: With GitHub Pages enabled, this page is served at `https://tksz-mycom.github.io/marker-helper/PRIVACY`. Register it under "Privacy" → "Privacy policy URL". / GitHub Pages 有効化後、本ページは `https://tksz-mycom.github.io/marker-helper/PRIVACY` で公開されます。「プライバシー」→「プライバシーポリシーの URL」に登録してください。

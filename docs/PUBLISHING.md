@@ -65,7 +65,7 @@ zip -r marker-helper-$(node -p "require('./manifest.json').version").zip \
 - リモートコード（外部 JS の読み込み・eval 等）は使用していない旨も申告できる。
 - ダッシュボードの**データ開示 / 限定使用の証明**欄を記入する（更新・公開のたびに必要）。
 
-> **【必須】プライバシーポリシー URL**: 本拡張は `activeTab` / `storage` / ホスト権限（`<all_urls>`）を使うため、**公開アクセス可能なプライバシーポリシー URL の登録が必須**。雛形を [`docs/PRIVACY.md`](./PRIVACY.md) に用意済み。これを GitHub Pages 等で公開し、その URL を「プライバシー」→「プライバシーポリシーの URL」に登録する。
+> **【必須】プライバシーポリシー URL**: 本拡張は `activeTab` / `storage` / ホスト権限（`<all_urls>`）を使うため、**公開アクセス可能なプライバシーポリシー URL の登録が必須**。雛形（英日併記）を [`docs/PRIVACY.md`](./PRIVACY.md) に用意済み。GitHub Pages 有効化後は `https://tksz-mycom.github.io/marker-helper/PRIVACY` で公開され、この URL を「プライバシー」→「プライバシーポリシーの URL」に登録する。
 
 ## 6. 権限の正当化を記載する（審査の鍵）
 
