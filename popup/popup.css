@@ -392,6 +392,56 @@ body {
   border-radius: 0;
 }
 
+/* 角の形式カード（プリセットのセグメントと数値指定のスライダーを1枚にまとめる） */
+.mm-corner-card {
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.mm-corner-card .mm-segmented,
+.mm-corner-card .mm-slider-row {
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+/* 数値指定の行・注記が続くときだけセグメントとの間隔を空ける */
+.mm-corner-card .mm-segmented:not(:last-child) {
+  margin-bottom: 10px;
+}
+
+/* 選択肢が多いセグメントは 3列のグリッドに折り返す */
+.mm-segmented-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.mm-segmented-grid button {
+  padding: 7px 2px;
+  font-size: 11px;
+}
+
+/* 数値指定（superellipse）は行いっぱいに広げてプリセットと区別する */
+.mm-corner-wide {
+  grid-column: 1 / -1;
+}
+
+/* display:flex が UA の [hidden]{display:none} を上書きするため明示的に閉じる */
+.mm-slider-row[hidden] {
+  display: none;
+}
+
+/* 角の形式が未対応のブラウザで出す注記 */
+.mm-corner-hint {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
 /* 連番ラベルの表示位置セグメント（ラベルOFF時は無効化） */
 .mm-label-pos {
   margin-top: 10px;

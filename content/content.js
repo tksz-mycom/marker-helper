@@ -13,8 +13,9 @@
 
   const state = {
     enabled: false,
-    /** 新規マークに適用する現在のスタイル。padding は縁と枠線のすき間、radius は角丸(px)、transparency は透明度(%) */
-    style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, transparency: 0 },
+    /** 新規マークに適用する現在のスタイル。padding は縁と枠線のすき間、radius は角丸(px)、
+     * cornerShape は角の形（CSS corner-shape）、transparency は透明度(%) */
+    style: { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, cornerShape: "round", transparency: 0 },
     /** 番号ラベル（連番バッジ）を表示するか（既定OFF） */
     showLabel: false,
     /** 番号バッジの表示位置: "tl" | "tr" | "bl" | "br"（既定は左上） */
@@ -48,6 +49,8 @@
       width: clampInt(input.width, 1, 20, base.width),
       padding: clampInt(input.padding, 0, 40, base.padding),
       radius: clampInt(input.radius, 0, 40, base.radius),
+      // 角の形式（キーワード or superellipse(k)）の検証は shared/cornerShape.js に集約している
+      cornerShape: MMShared.sanitizeCornerShape(input.cornerShape, base.cornerShape),
       transparency: clampInt(input.transparency, 0, 100, base.transparency),
     };
   }
@@ -204,6 +207,8 @@
     box.style.borderWidth = `${mark.width}px`;
     box.style.borderColor = mark.color;
     box.style.borderRadius = `${mark.radius}px`;
+    // corner-shape は CSSOM のキャメルケース名が使えない環境もあるため setProperty で当てる
+    box.style.setProperty("corner-shape", mark.cornerShape || "round");
     // 透明度(%) を不透明度(opacity)に変換して適用（0%=不透明, 100%=完全透明）
     box.style.opacity = String(1 - (mark.transparency || 0) / 100);
   }
@@ -218,6 +223,7 @@
       applyRect(hoverBox, r);
       hoverBox.style.borderColor = state.style.color;
       hoverBox.style.borderRadius = `${state.style.radius}px`;
+      hoverBox.style.setProperty("corner-shape", state.style.cornerShape || "round");
       hoverBox.style.opacity = String(1 - (state.style.transparency || 0) / 100);
     } else {
       hoverBox.style.display = "none";
@@ -432,6 +438,7 @@
       width: st.width,
       padding: st.padding,
       radius: st.radius,
+      cornerShape: st.cornerShape || "round",
       transparency: st.transparency,
       // 連番バッジの表示はマークごとに3状態で保持する: true=常に表示 / false=常に非表示 /
       // null=グローバル既定(state.showLabel)を継承。明示値の無い新規・旧データは継承(null)とし、
@@ -558,7 +565,7 @@
   }
 
   // 既存マークの枠スタイル（色以外も含む）を個別に変更する。patch には
-  // color/lineStyle/width/padding/radius/transparency のうち変更分だけを渡す。
+  // color/lineStyle/width/padding/radius/cornerShape/transparency のうち変更分だけを渡す。
   // 与えられなかった項目・不正値は現在値を維持する（sanitizeStyle のフォールバック）。
   // 新規マークの既定スタイル（state.style）には影響しない。
   function setMarkStyle(id, patch) {
@@ -571,6 +578,7 @@
       width: mark.width,
       padding: mark.padding,
       radius: mark.radius,
+      cornerShape: mark.cornerShape,
       transparency: mark.transparency,
     };
     const next = sanitizeStyle({ ...current, ...patch }, current);
@@ -579,6 +587,7 @@
     mark.width = next.width;
     mark.padding = next.padding;
     mark.radius = next.radius;
+    mark.cornerShape = next.cornerShape;
     mark.transparency = next.transparency;
     mark.badge.style.background = next.color;
     styleBox(mark.box, mark);
@@ -955,6 +964,7 @@
       width: m.width,
       padding: m.padding,
       radius: m.radius,
+      cornerShape: m.cornerShape,
       transparency: m.transparency,
       showLabel: m.showLabel,
       detached: !document.contains(m.el),
@@ -977,6 +987,7 @@
       width: m.width,
       padding: m.padding,
       radius: m.radius,
+      cornerShape: m.cornerShape,
       transparency: m.transparency,
       showLabel: m.showLabel,
       detached: !document.contains(m.el),

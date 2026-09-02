@@ -160,8 +160,33 @@
         </div>
       </section>
 
+      <!-- 角の形式（CSS corner-shape。角丸の曲率を切り替える） -->
+      <section class="mm-field">
+        <h2>角の形式</h2>
+        <div class="mm-corner-card">
+          <div class="mm-segmented mm-segmented-grid" id="mm-corner" role="radiogroup" aria-label="角の形式">
+            <button type="button" data-value="round" class="is-active" title="round: 通常の円弧の角丸">標準</button>
+            <button type="button" data-value="squircle" title="squircle: Mac風のなめらかな角">なめらか</button>
+            <button type="button" data-value="bevel" title="bevel: 直線で切り落とした角">面取り</button>
+            <button type="button" data-value="scoop" title="scoop: 内側にえぐった角">えぐり</button>
+            <button type="button" data-value="notch" title="notch: 四角く切り欠いた角">切り欠き</button>
+            <button type="button" data-value="straight" title="straight: 角丸なし（直角）">直角</button>
+            <button type="button" data-value="superellipse" class="mm-corner-wide" title="superellipse(k): 曲率を数値で指定（2=標準, 4=なめらか, 1=面取り）">数値指定</button>
+          </div>
+          <div class="mm-slider-row" id="mm-corner-k-row" hidden>
+            <input type="range" id="mm-corner-k" class="mm-range" min="-5" max="5" step="0.1" value="4" aria-label="曲率" />
+            <input type="number" id="mm-corner-k-num" class="mm-num" min="-5" max="5" step="0.1" value="4" aria-label="曲率(superellipse)" />
+            <span class="mm-unit">k</span>
+          </div>
+          <p class="mm-corner-hint" id="mm-corner-hint" hidden>
+            このブラウザは角の形式に未対応のため「標準」で表示されます
+          </p>
+        </div>
+      </section>
+
     </main>
 
+    <script src="../shared/cornerShape.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

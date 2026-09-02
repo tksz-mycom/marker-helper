@@ -507,6 +507,41 @@ function wireStyleEditor(node, mark) {
   bindNum(".mm-style-radius", ".mm-style-radius-num", "radius", mark.radius);
   bindNum(".mm-style-transparency", ".mm-style-transparency-num", "transparency", mark.transparency);
 
+  // 角の形式（CSS corner-shape）。プリセットは選択で即時に確定し、「数値指定」を選んだときだけ
+  // 曲率（superellipse(k)）の行を出す。値の判定・整形は shared/cornerShape.js に集約している。
+  const cornerSel = pop.querySelector(".mm-style-corner");
+  const cornerKRow = pop.querySelector(".mm-style-corner-k");
+  const cornerK = pop.querySelector(".mm-style-corner-k-range");
+  const cornerKNum = pop.querySelector(".mm-style-corner-k-num");
+  const markK = MMShared.superellipseParam(mark.cornerShape);
+  cornerSel.value = markK == null ? mark.cornerShape || "round" : "superellipse";
+  cornerKRow.hidden = markK == null;
+  cornerK.value = String(markK == null ? MMShared.CORNER_K_DEFAULT : markK);
+  cornerKNum.value = cornerK.value;
+
+  const sendCornerK = (value) => {
+    const k = MMShared.clampCornerK(value);
+    cornerK.value = String(k);
+    cornerKNum.value = String(k);
+    sendPatch({ cornerShape: `superellipse(${k})` });
+  };
+
+  cornerSel.addEventListener("change", () => {
+    const useK = cornerSel.value === "superellipse";
+    cornerKRow.hidden = !useK;
+    if (useK) sendCornerK(cornerK.value);
+    else sendPatch({ cornerShape: cornerSel.value });
+  });
+  // 数値系と同じく、ドラッグ中（input）は相方の表示だけ更新し確定時（change）に送る
+  cornerK.addEventListener("input", () => {
+    cornerKNum.value = cornerK.value;
+  });
+  cornerKNum.addEventListener("input", () => {
+    cornerK.value = cornerKNum.value;
+  });
+  cornerK.addEventListener("change", () => sendCornerK(cornerK.value));
+  cornerKNum.addEventListener("change", () => sendCornerK(cornerKNum.value));
+
   // 連番ラベルの表示/非表示はマークごとに切り替える。枠スタイル（MM_SET_MARK_STYLE）
   // とは別管理のため専用メッセージ MM_SET_MARK_LABEL で送る。
   const showLabelEl = pop.querySelector(".mm-style-showlabel");

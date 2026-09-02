@@ -27,6 +27,11 @@ const els = {
   padding: document.getElementById("mm-padding"),
   paddingNum: document.getElementById("mm-padding-num"),
   radius: document.getElementById("mm-radius"),
+  corner: document.getElementById("mm-corner"),
+  cornerKRow: document.getElementById("mm-corner-k-row"),
+  cornerK: document.getElementById("mm-corner-k"),
+  cornerKNum: document.getElementById("mm-corner-k-num"),
+  cornerHint: document.getElementById("mm-corner-hint"),
   radiusNum: document.getElementById("mm-radius-num"),
   transparency: document.getElementById("mm-transparency"),
   transparencyNum: document.getElementById("mm-transparency-num"),
@@ -40,7 +45,7 @@ const els = {
 };
 
 let activeTabId = null;
-let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, transparency: 0 };
+let style = { color: "#ff3b30", lineStyle: "solid", width: 4, padding: 8, radius: 8, cornerShape: "round", transparency: 0 };
 let showLabel = false;
 let labelPos = "tl"; // 連番バッジの表示位置: tl | tr | bl | br
 
@@ -52,6 +57,9 @@ const HEX_RE = /^#[0-9a-f]{6}$/i;
 let customColors = [];
 // 隠しカラーピッカーの用途を区別する。-1 = 新規追加、0以上 = そのインデックスの色を変更
 let editingIndex = -1;
+
+// 角の形式（CSS corner-shape）の値の判定・整形は shared/cornerShape.js に集約している
+// （プリセットのキーワードと superellipse(k) の数値指定。2=標準 / 4=なめらか / 1=面取り）。
 
 // マーカーの余白・角丸は 0〜40px（1px刻み）
 const MAX_SPACING = 40;
@@ -289,6 +297,8 @@ function updatePreview() {
   // 余白を文字と枠線のすき間として可視化する
   els.previewBox.style.padding = `${8 + style.padding}px ${18 + style.padding}px`;
   els.previewBox.style.borderRadius = `${style.radius}px`;
+  // 角の形（CSS corner-shape）。キャメルケース名が使えない環境もあるため setProperty で当てる
+  els.previewBox.style.setProperty("corner-shape", style.cornerShape || "round");
   // 透明度(%) を不透明度(opacity)に変換して反映（0%=不透明, 100%=完全透明）
   els.previewBox.style.opacity = String(1 - (style.transparency || 0) / 100);
   els.previewBadge.style.background = style.color;
@@ -347,6 +357,32 @@ function setPadding(value) {
 
 function setRadius(value) {
   setSpacing("radius", els.radius, els.radiusNum, value);
+}
+
+// セグメントの選択状態と数値指定の行の表示を、現在の cornerShape に合わせる
+function reflectCornerShape() {
+  const k = MMShared.superellipseParam(style.cornerShape);
+  reflectSegmented(els.corner, k == null ? style.cornerShape : "superellipse");
+  els.cornerKRow.hidden = k == null;
+  if (k != null) reflectSlider(els.cornerK, els.cornerKNum, k);
+}
+
+// 角の形式（CSS corner-shape）。border-radius と組み合わせて角の曲率を変える。
+function setCornerShape(value) {
+  // 「数値指定」は現在のスライダー値から superellipse(k) を組み立てる
+  const next = value === "superellipse" ? `superellipse(${MMShared.clampCornerK(els.cornerK.value)})` : value;
+  style = { ...style, cornerShape: next };
+  reflectCornerShape();
+  updatePreview();
+  pushStyle();
+}
+
+// 数値指定（superellipse）の曲率 k
+function setCornerK(value) {
+  style = { ...style, cornerShape: `superellipse(${MMShared.clampCornerK(value)})` };
+  reflectCornerShape();
+  updatePreview();
+  pushStyle();
 }
 
 function setTransparency(value) {
@@ -416,6 +452,14 @@ function wireEvents() {
   // 角丸
   els.radius.addEventListener("input", () => setRadius(els.radius.value));
   els.radiusNum.addEventListener("change", () => setRadius(els.radiusNum.value));
+
+  // 角の形式: プリセットはクリックで即時、数値指定はスライダー即時／数値入力は確定時
+  els.corner.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-value]");
+    if (btn) setCornerShape(btn.dataset.value);
+  });
+  els.cornerK.addEventListener("input", () => setCornerK(els.cornerK.value));
+  els.cornerKNum.addEventListener("change", () => setCornerK(els.cornerKNum.value));
 
   // 透明度: スライダーは即時、数値入力は確定時に反映
   els.transparency.addEventListener("input", () => setTransparency(els.transparency.value));
@@ -500,6 +544,9 @@ async function init() {
   reflectSlider(els.widthRange, els.widthNum, clampWidth(style.width));
   reflectSlider(els.padding, els.paddingNum, clampSpacing(style.padding));
   reflectSlider(els.radius, els.radiusNum, clampSpacing(style.radius));
+  reflectCornerShape();
+  // corner-shape 未対応のブラウザでは「標準」以外を選んでも見た目が変わらないため注記を出す
+  els.cornerHint.hidden = CSS.supports("corner-shape", "squircle");
   reflectSlider(els.transparency, els.transparencyNum, clampTransparency(style.transparency));
   reflectSegmented(els.labelPos, labelPos);
   setCount(state.marks?.length ?? 0);

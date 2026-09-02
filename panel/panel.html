@@ -223,6 +223,25 @@
                   <span class="mm-unit">px</span>
                 </div>
                 <div class="mm-style-row">
+                  <span class="mm-style-label">角の形</span>
+                  <select class="mm-select mm-style-corner" aria-label="角の形式" title="角の形式（CSS corner-shape）">
+                    <option value="round">標準</option>
+                    <option value="squircle">なめらか</option>
+                    <option value="bevel">面取り</option>
+                    <option value="scoop">えぐり</option>
+                    <option value="notch">切り欠き</option>
+                    <option value="straight">直角</option>
+                    <option value="superellipse">数値指定</option>
+                  </select>
+                </div>
+                <!-- 数値指定（superellipse）を選んだときだけ出す曲率の行 -->
+                <div class="mm-style-row mm-style-corner-k" hidden>
+                  <span class="mm-style-label">曲率</span>
+                  <input type="range" class="mm-range mm-style-corner-k-range" min="-5" max="5" step="0.1" aria-label="曲率" />
+                  <input type="number" class="mm-num mm-style-corner-k-num" min="-5" max="5" step="0.1" aria-label="曲率(superellipse)" />
+                  <span class="mm-unit">k</span>
+                </div>
+                <div class="mm-style-row">
                   <label class="mm-style-check" title="このマーカーの連番ラベルの表示/非表示を切り替える">
                     <input type="checkbox" class="mm-style-showlabel" />
                     <span>連番ラベルを表示</span>
@@ -261,6 +280,7 @@
     <div id="mm-toast" class="mm-toast" role="status" aria-live="polite" hidden></div>
 
     <script src="../shared/label.js"></script>
+    <script src="../shared/cornerShape.js"></script>
     <script src="../shared/reorderController.js"></script>
     <script src="panel.js"></script>
   </body>

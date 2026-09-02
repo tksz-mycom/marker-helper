@@ -944,7 +944,8 @@ body {
 }
 
 /* display:flex が UA の [hidden]{display:none} を上書きするため明示的に閉じる */
-.mm-style-pop[hidden] {
+.mm-style-pop[hidden],
+.mm-style-row[hidden] {
   display: none;
 }
 
@@ -1165,4 +1166,10 @@ body.mm-drop-active::after {
 .mm-toast.is-show {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* 吹き出し内のセレクト（角の形）は行の高さに合わせて小さめにする */
+.mm-style-pop .mm-select {
+  padding: 3px 6px;
+  font-size: 11px;
 }
