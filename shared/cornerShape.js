@@ -26,6 +26,11 @@
     return Math.round(Math.min(CORNER_K_MAX, Math.max(CORNER_K_MIN, n)) * 10) / 10;
   }
 
+  // 曲率 k から corner-shape の値を組み立てる（この文字列を作るのはここだけにする）
+  function superellipse(k) {
+    return `superellipse(${clampCornerK(k)})`;
+  }
+
   // 角の形式を検証する。キーワードか superellipse(<number>) だけを通し、
   // それ以外は fallback（未指定なら round）に落とす。
   function sanitizeCornerShape(value, fallback) {
@@ -34,14 +39,13 @@
     const v = value.trim();
     if (CORNER_SHAPES.includes(v)) return v;
     const k = superellipseParam(v);
-    return k == null ? base : `superellipse(${clampCornerK(k)})`;
+    return k == null ? base : superellipse(k);
   }
 
   const api = {
     CORNER_SHAPES,
-    CORNER_K_MIN,
-    CORNER_K_MAX,
     CORNER_K_DEFAULT,
+    superellipse,
     superellipseParam,
     clampCornerK,
     sanitizeCornerShape,

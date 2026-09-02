@@ -423,9 +423,13 @@ function applyGroupChip(node, mark) {
 function clampNumInput(input) {
   const min = Number(input.min);
   const max = Number(input.max);
-  let v = Math.round(Number(input.value));
+  const step = Number(input.step) || 1;
+  let v = Number(input.value);
   if (!Number.isFinite(v)) v = min;
   v = Math.max(min, Math.min(max, v));
+  // step の逆数で整数化してから戻し、0.1 刻み（曲率）でも浮動小数の誤差を出さない
+  const inv = 1 / step;
+  v = Math.round(v * inv) / inv;
   input.value = String(v);
   return v;
 }
@@ -481,9 +485,10 @@ function wireStyleEditor(node, mark) {
     });
   }
 
-  // 数値系（線幅/余白/角丸/透明度）。range と number を同期し、確定時（change）に送る。
+  // 数値系（線幅/余白/角丸/透明度/曲率）。range と number を同期し、確定時（change）に送る。
   // ドラッグ中（input）は相方の数値表示だけ更新し、再描画を伴う送信は行わない。
-  const bindNum = (rangeSel, numSel, field, value) => {
+  // 既定は数値をそのまま送るが、曲率のように値を組み立てて送る項目は toValue で変換する。
+  const bindNum = (rangeSel, numSel, field, value, toValue) => {
     const range = pop.querySelector(rangeSel);
     const num = pop.querySelector(numSel);
     range.value = String(value);
@@ -494,12 +499,15 @@ function wireStyleEditor(node, mark) {
     num.addEventListener("input", () => {
       range.value = num.value;
     });
-    range.addEventListener("change", () => sendPatch({ [field]: Number(range.value) }));
-    num.addEventListener("change", () => {
-      const v = clampNumInput(num);
+    // 確定時は入力の値域・刻みに丸め、range と number の表示を揃えてから送る
+    const commit = (input) => {
+      const v = clampNumInput(input);
       range.value = String(v);
-      sendPatch({ [field]: v });
-    });
+      num.value = String(v);
+      sendPatch({ [field]: toValue ? toValue(v) : v });
+    };
+    range.addEventListener("change", () => commit(range));
+    num.addEventListener("change", () => commit(num));
   };
 
   bindNum(".mm-style-width", ".mm-style-width-num", "width", mark.width);
@@ -512,35 +520,23 @@ function wireStyleEditor(node, mark) {
   const cornerSel = pop.querySelector(".mm-style-corner");
   const cornerKRow = pop.querySelector(".mm-style-corner-k");
   const cornerK = pop.querySelector(".mm-style-corner-k-range");
-  const cornerKNum = pop.querySelector(".mm-style-corner-k-num");
   const markK = MMShared.superellipseParam(mark.cornerShape);
   cornerSel.value = markK == null ? mark.cornerShape || "round" : "superellipse";
   cornerKRow.hidden = markK == null;
-  cornerK.value = String(markK == null ? MMShared.CORNER_K_DEFAULT : markK);
-  cornerKNum.value = cornerK.value;
-
-  const sendCornerK = (value) => {
-    const k = MMShared.clampCornerK(value);
-    cornerK.value = String(k);
-    cornerKNum.value = String(k);
-    sendPatch({ cornerShape: `superellipse(${k})` });
-  };
+  // 曲率は他の数値項目と同じ配線に乗せ、送る値だけ superellipse() で組み立てる
+  bindNum(
+    ".mm-style-corner-k-range",
+    ".mm-style-corner-k-num",
+    "cornerShape",
+    markK == null ? MMShared.CORNER_K_DEFAULT : markK,
+    MMShared.superellipse,
+  );
 
   cornerSel.addEventListener("change", () => {
     const useK = cornerSel.value === "superellipse";
     cornerKRow.hidden = !useK;
-    if (useK) sendCornerK(cornerK.value);
-    else sendPatch({ cornerShape: cornerSel.value });
+    sendPatch({ cornerShape: useK ? MMShared.superellipse(cornerK.value) : cornerSel.value });
   });
-  // 数値系と同じく、ドラッグ中（input）は相方の表示だけ更新し確定時（change）に送る
-  cornerK.addEventListener("input", () => {
-    cornerKNum.value = cornerK.value;
-  });
-  cornerKNum.addEventListener("input", () => {
-    cornerK.value = cornerKNum.value;
-  });
-  cornerK.addEventListener("change", () => sendCornerK(cornerK.value));
-  cornerKNum.addEventListener("change", () => sendCornerK(cornerKNum.value));
 
   // 連番ラベルの表示/非表示はマークごとに切り替える。枠スタイル（MM_SET_MARK_STYLE）
   // とは別管理のため専用メッセージ MM_SET_MARK_LABEL で送る。

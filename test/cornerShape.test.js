@@ -1,6 +1,7 @@
 // 層1: 角の形式（CSS corner-shape）の値の検証・整形
 const {
   sanitizeCornerShape,
+  superellipse,
   superellipseParam,
   clampCornerK,
 } = require("../shared/cornerShape.js");
@@ -36,7 +37,13 @@ describe("sanitizeCornerShape（角の形式の検証）", () => {
   });
 });
 
-describe("superellipseParam / clampCornerK", () => {
+describe("superellipse / superellipseParam / clampCornerK", () => {
+  test("組み立ては曲率を値域内の小数1桁に丸めてから行う", () => {
+    expect(superellipse(2.36)).toBe("superellipse(2.4)");
+    expect(superellipse(99)).toBe("superellipse(5)");
+    expect(superellipse("あ")).toBe("superellipse(4)");
+  });
+
   test("superellipse(k) からは k を、キーワードからは null を返す", () => {
     expect(superellipseParam("superellipse(3.5)")).toBe(3.5);
     expect(superellipseParam("round")).toBe(null);

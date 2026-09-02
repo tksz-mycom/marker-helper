@@ -375,8 +375,9 @@ body {
   border-radius: 0;
 }
 
-/* 線幅カード（細/中/太のセグメントとスライダーを1枚にまとめる） */
-.mm-width-card {
+/* セグメントとスライダーを1枚にまとめるカード（線幅／角の形式） */
+.mm-width-card,
+.mm-corner-card {
   padding: 10px;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -385,21 +386,7 @@ body {
 
 /* カード内のセグメント・スライダー行はカード自体が枠になるため個別の枠を外す */
 .mm-width-card .mm-segmented,
-.mm-width-card .mm-slider-row {
-  padding: 0;
-  background: none;
-  border: 0;
-  border-radius: 0;
-}
-
-/* 角の形式カード（プリセットのセグメントと数値指定のスライダーを1枚にまとめる） */
-.mm-corner-card {
-  padding: 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 9px;
-}
-
+.mm-width-card .mm-slider-row,
 .mm-corner-card .mm-segmented,
 .mm-corner-card .mm-slider-row {
   padding: 0;

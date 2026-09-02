@@ -369,9 +369,9 @@ function reflectCornerShape() {
 
 // 角の形式（CSS corner-shape）。border-radius と組み合わせて角の曲率を変える。
 function setCornerShape(value) {
-  // 「数値指定」は現在のスライダー値から superellipse(k) を組み立てる
-  const next = value === "superellipse" ? `superellipse(${MMShared.clampCornerK(els.cornerK.value)})` : value;
-  style = { ...style, cornerShape: next };
+  // 「数値指定」は現在のスライダー値での曲率変更と同じ
+  if (value === "superellipse") return setCornerK(els.cornerK.value);
+  style = { ...style, cornerShape: value };
   reflectCornerShape();
   updatePreview();
   pushStyle();
@@ -379,7 +379,7 @@ function setCornerShape(value) {
 
 // 数値指定（superellipse）の曲率 k
 function setCornerK(value) {
-  style = { ...style, cornerShape: `superellipse(${MMShared.clampCornerK(value)})` };
+  style = { ...style, cornerShape: MMShared.superellipse(value) };
   reflectCornerShape();
   updatePreview();
   pushStyle();
