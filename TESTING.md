@@ -31,6 +31,7 @@ PW_HEADLESS=1 xvfb-run -a npm run e2e   # ヘッドレス/CI（要 xvfb）
 
 - `shared/label.js` … `effectiveShowLabel(mark, global)`（連番の3状態）
 - `shared/reorderController.js` … 並べ替え確定のタイミング制御（`onMove`/`shouldSkipRender`/`reset`）
+- `shared/cornerShape.js` … 角の形式（CSS `corner-shape`）の検証・整形（`sanitizeCornerShape`/`superellipseParam`/`clampCornerK`）
 
 層2では **実際の `panel.html` を jsdom に流し込み、`panel.js` を読み込んで**内部関数を検証する。
 そのため `panel.js` 末尾に**テストシーム**を入れてある: Node(`module` 定義時)では自動起動せず
