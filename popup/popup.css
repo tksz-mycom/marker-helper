@@ -395,9 +395,10 @@ body {
   border-radius: 0;
 }
 
-/* 数値指定の行・注記が続くときだけセグメントとの間隔を空ける */
-.mm-corner-card .mm-segmented:not(:last-child) {
-  margin-bottom: 10px;
+/* 数値指定の行・注記は、実際に表示されるときだけセグメントとの間隔を空ける
+   （hidden でも DOM には残るため、セグメント側の :not(:last-child) では判定できない） */
+.mm-corner-card .mm-slider-row:not([hidden]) {
+  margin-top: 10px;
 }
 
 /* 選択肢が多いセグメントは 3列のグリッドに折り返す */

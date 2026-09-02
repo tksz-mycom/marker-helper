@@ -1,17 +1,19 @@
 // 角の形式（CSS corner-shape）の値を扱う唯一の場所（content / popup / panel / テストで共有）。
 // border-radius と組み合わせて角の曲率を変える。プリセットのキーワードに加えて
-// superellipse(k) を数値で指定できる（k が大きいほど角ばり、負値でえぐれる）。
-//   superellipse(1)=bevel / superellipse(2)=round / superellipse(4)=squircle 相当
+// superellipse(k) を数値で指定できる。k は指数そのものではなく 2 を底とする対数で、
+// 大きいほど角ばり負値でえぐれる（Chrome の算出値で確認した対応）:
+//   superellipse(0)=bevel / superellipse(1)=round / superellipse(2)=squircle
+//   superellipse(-1)=scoop / superellipse(infinity)=square
 // corner-shape 未対応のブラウザでは無視され round（通常の角丸）と同じ見た目になる。
 // ブラウザでは globalThis.MMShared に生やし、Node(テスト)では module.exports する両対応モジュール。
 (function (root) {
   "use strict";
 
-  const CORNER_SHAPES = ["round", "squircle", "bevel", "scoop", "notch", "straight"];
+  const CORNER_SHAPES = ["round", "squircle", "bevel", "scoop", "notch", "square"];
   const SUPERELLIPSE_RE = /^superellipse\(\s*(-?\d+(?:\.\d+)?)\s*\)$/;
   const CORNER_K_MIN = -5;
   const CORNER_K_MAX = 5;
-  const CORNER_K_DEFAULT = 4; // squircle 相当
+  const CORNER_K_DEFAULT = 2; // squircle 相当
 
   // superellipse(k) なら k を返す。キーワード（round 等）や不正値なら null。
   function superellipseParam(value) {

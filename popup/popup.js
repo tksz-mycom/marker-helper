@@ -59,7 +59,7 @@ let customColors = [];
 let editingIndex = -1;
 
 // 角の形式（CSS corner-shape）の値の判定・整形は shared/cornerShape.js に集約している
-// （プリセットのキーワードと superellipse(k) の数値指定。2=標準 / 4=なめらか / 1=面取り）。
+// （プリセットのキーワードと superellipse(k) の数値指定。0=面取り / 1=標準 / 2=なめらか）。
 
 // マーカーの余白・角丸は 0〜40px（1px刻み）
 const MAX_SPACING = 40;

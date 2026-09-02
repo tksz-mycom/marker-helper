@@ -8,7 +8,7 @@ const {
 
 describe("sanitizeCornerShape（角の形式の検証）", () => {
   test("プリセットのキーワードはそのまま通す", () => {
-    for (const v of ["round", "squircle", "bevel", "scoop", "notch", "straight"]) {
+    for (const v of ["round", "squircle", "bevel", "scoop", "notch", "square"]) {
       expect(sanitizeCornerShape(v, "round")).toBe(v);
     }
   });
@@ -26,6 +26,8 @@ describe("sanitizeCornerShape（角の形式の検証）", () => {
 
   test("不正値・非文字列は fallback に落ちる", () => {
     expect(sanitizeCornerShape("circle", "squircle")).toBe("squircle");
+    // straight は corner-shape に無いキーワード（実装が黙って無視するため通してはいけない）
+    expect(sanitizeCornerShape("straight", "round")).toBe("round");
     expect(sanitizeCornerShape("superellipse(abc)", "round")).toBe("round");
     expect(sanitizeCornerShape("url(javascript:alert(1))", "round")).toBe("round");
     expect(sanitizeCornerShape(undefined, "bevel")).toBe("bevel");
@@ -41,7 +43,7 @@ describe("superellipse / superellipseParam / clampCornerK", () => {
   test("組み立ては曲率を値域内の小数1桁に丸めてから行う", () => {
     expect(superellipse(2.36)).toBe("superellipse(2.4)");
     expect(superellipse(99)).toBe("superellipse(5)");
-    expect(superellipse("あ")).toBe("superellipse(4)");
+    expect(superellipse("あ")).toBe("superellipse(2)");
   });
 
   test("superellipse(k) からは k を、キーワードからは null を返す", () => {
@@ -53,6 +55,6 @@ describe("superellipse / superellipseParam / clampCornerK", () => {
   test("曲率は値域内の小数1桁に丸め、数値化できなければ既定値", () => {
     expect(clampCornerK("2.36")).toBe(2.4);
     expect(clampCornerK(10)).toBe(5);
-    expect(clampCornerK("あ")).toBe(4);
+    expect(clampCornerK("あ")).toBe(2);
   });
 });
