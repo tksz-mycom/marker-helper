@@ -27,6 +27,7 @@ function mark(id, over) {
       width: 2,
       padding: 2,
       radius: 4,
+      cornerShape: "round",
       transparency: 0,
       showLabel: null,
       detached: false,
@@ -46,6 +47,7 @@ beforeAll(() => {
     {},
     require("../shared/label.js"),
     require("../shared/reorderController.js"),
+    require("../shared/cornerShape.js"),
   );
   // panel.js を読み込む（module.exports 経由で内部関数取得、bootstrap は走らない）
   panel = require("../panel/panel.js");
@@ -87,6 +89,25 @@ describe("panel render / 並べ替え（層2: jsdom）", () => {
     expect(dis(items[2], ".mm-act-move-down")).toBe(true);
     expect(dis(items[2], ".mm-act-move-bottom")).toBe(true);
     expect(dis(items[1], ".mm-act-move-up")).toBe(false);
+  });
+
+  test("角の形式は歯車の吹き出しのセレクトに反映される（未指定は標準）", () => {
+    panel.render([mark(1, { cornerShape: "squircle" }), mark(2, { cornerShape: undefined })]);
+    const corner = (id) => listEl.querySelector(`[data-id="${id}"] .mm-style-corner`).value;
+    expect(corner(1)).toBe("squircle");
+    expect(corner(2)).toBe("round");
+  });
+
+  test("superellipse(k) は「数値指定」として曲率の行に展開される", () => {
+    panel.render([mark(1, { cornerShape: "superellipse(3.5)" }), mark(2)]);
+    const row = (id) => listEl.querySelector(`[data-id="${id}"] .mm-style-corner-k`);
+    const sel = (id) => listEl.querySelector(`[data-id="${id}"] .mm-style-corner`).value;
+    expect(sel(1)).toBe("superellipse");
+    expect(row(1).hidden).toBe(false);
+    expect(listEl.querySelector('[data-id="1"] .mm-style-corner-k-range').value).toBe("3.5");
+    // プリセット選択のマークでは曲率の行を出さない
+    expect(sel(2)).toBe("round");
+    expect(row(2).hidden).toBe(true);
   });
 
   test("並べ替え確定中の外部更新(render)は抑止されDOM順が保たれる（#2）", () => {
