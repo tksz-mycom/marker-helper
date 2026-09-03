@@ -7,3 +7,6 @@ playwright-report/
 # 配布用パッケージ（手動生成物）
 marker-helper-*.zip
 *.zip
+
+# SDD（サブエージェント実行）の作業用スクラッチ
+.superpowers/
