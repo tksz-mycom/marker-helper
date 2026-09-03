@@ -235,17 +235,21 @@ async function copyText(text) {
 async function copyElementContent(mark, kind) {
   const res = await sendToTab({ type: "MM_GET_ELEMENT_CONTENT", id: mark.id });
   if (!res || !res.ok) {
-    showToast("対象が見つかりません（消失したマーカー）");
+    showToast(MMShared.t("panel.toast.detached"));
     return;
   }
   const value = kind === "html" ? res.html : res.text;
-  const kindLabel = kind === "html" ? "HTML" : "テキスト";
+  const kindLabel = kind === "html" ? "HTML" : MMShared.t("panel.item.copyText");
   if (!value) {
-    showToast(`コピーできる${kindLabel}がありません`);
+    showToast(MMShared.t("panel.toast.noContent", { kind: kindLabel }));
     return;
   }
   const ok = await copyText(value);
-  showToast(ok ? `#${mark.label} の${kindLabel}をコピーしました` : "コピーに失敗しました");
+  showToast(
+    ok
+      ? MMShared.t("panel.toast.copiedContent", { n: mark.label, kind: kindLabel })
+      : MMShared.t("panel.toast.copyFailed"),
+  );
 }
 
 // インスペクト情報を <dl> に行（dt/dd）として描画する。
@@ -260,17 +264,25 @@ function renderInspect(box, info) {
     dd.textContent = value;
     box.append(dt, dd);
   };
-  row("サイズ", `${info.width} × ${info.height} px`);
-  row("表示", info.display);
+  row(MMShared.t("panel.inspect.size"), `${info.width} × ${info.height} px`);
+  row(MMShared.t("panel.inspect.display"), info.display);
   // 文字色・背景色は見本スウォッチ付きで示す
-  appendColorRow(box, "文字色", info.color);
-  appendColorRow(box, "背景色", info.background);
+  appendColorRow(box, MMShared.t("panel.inspect.color"), info.color);
+  appendColorRow(box, MMShared.t("panel.inspect.background"), info.background);
   if (info.contrast != null) {
-    const grade = info.contrast >= 4.5 ? "AA" : info.contrast >= 3 ? "AA(大)" : "不足";
-    row("コントラスト", `${info.contrast.toFixed(2)} : 1（${grade}）`);
+    const grade =
+      info.contrast >= 4.5
+        ? "AA"
+        : info.contrast >= 3
+          ? MMShared.t("panel.inspect.contrastAALarge")
+          : MMShared.t("panel.inspect.contrastFail");
+    row(
+      MMShared.t("panel.inspect.contrast"),
+      MMShared.t("panel.inspect.contrastValue", { value: info.contrast.toFixed(2), grade }),
+    );
   }
-  row("フォント", [info.fontFamily, info.fontSize, info.fontWeight].filter(Boolean).join(" / "));
-  row("余白", `padding ${info.padding} / margin ${info.margin}`);
+  row(MMShared.t("panel.inspect.font"), [info.fontFamily, info.fontSize, info.fontWeight].filter(Boolean).join(" / "));
+  row(MMShared.t("panel.inspect.spacing"), `padding ${info.padding} / margin ${info.margin}`);
   row("role", info.role);
   row("aria-label", info.ariaLabel);
 }
@@ -288,13 +300,12 @@ function appendColorRow(box, label, value) {
   box.append(dt, dd);
 }
 
-// セレクタ貼り替えの失敗理由（content の reason）に対応する日本語メッセージ
-const SELECTOR_ERROR = {
-  empty: "セレクタが空です",
-  nomatch: "一致する要素が見つかりません",
-  own: "拡張機能自身の要素は指定できません",
-  notfound: "対象のマークが見つかりません",
-};
+// セレクタ貼り替えの失敗理由（content の reason）に対応するメッセージ。
+// 言語切替に追従させるため、定数ではなく参照時に辞書を引く関数にしている。
+function selectorErrorMessage(reason) {
+  const keys = { empty: true, nomatch: true, own: true, notfound: true };
+  return MMShared.t(keys[reason] ? `panel.selectorError.${reason}` : "panel.selectorError.unknown");
+}
 
 // セレクタ表示の <code> を直接編集できるようにする。Enter / フォーカス外しで確定し、
 // その文字列で要素を再特定して貼り替える。空・不一致・不正時は元の表示へ戻す。
@@ -304,8 +315,8 @@ function setupSelectorEdit(selector, mark) {
   selector.setAttribute("contenteditable", "plaintext-only");
   selector.setAttribute("spellcheck", "false");
   selector.setAttribute("role", "textbox");
-  selector.setAttribute("aria-label", "セレクタ（クリックで編集）");
-  selector.title = "クリックして編集（Enterで確定／Escで取消）";
+  selector.setAttribute("aria-label", MMShared.t("panel.selector.aria"));
+  selector.title = MMShared.t("panel.selector.title");
 
   let committing = false;
   const revert = () => {
@@ -322,7 +333,7 @@ function setupSelectorEdit(selector, mark) {
     }
     if (!value) {
       revert();
-      showToast(SELECTOR_ERROR.empty);
+      showToast(selectorErrorMessage("empty"));
       return;
     }
     committing = true;
@@ -335,10 +346,10 @@ function setupSelectorEdit(selector, mark) {
     committing = false;
     if (res && res.ok) {
       // 成功時は content の broadcast による再描画で最新表示へ更新される
-      showToast(`#${mark.label} の要素を貼り替えました`);
+      showToast(MMShared.t("panel.toast.selectorApplied", { n: mark.label }));
     } else {
       revert();
-      showToast(SELECTOR_ERROR[res?.reason] || "セレクタを適用できません");
+      showToast(selectorErrorMessage(res?.reason));
     }
   };
 
@@ -375,12 +386,14 @@ function selectorRobustness(mark) {
   return nth <= 1 ? "medium" : "weak";
 }
 
-const ROBUST_LABEL = { strong: "安定", medium: "普通", weak: "不安定" };
-const ROBUST_TITLE = {
-  strong: "id・安定属性・一意クラスで特定でき、壊れにくいセレクタです",
-  medium: "クラスや 1 段の位置指定に依存します。動的ページでは変わる可能性があります",
-  weak: "位置指定（nth-of-type）の連結に依存し、ページ構造の変化で壊れやすいセレクタです",
-};
+// 堅牢性チップの表示文言。言語切替に追従させるため参照時に辞書を引く。
+function robustLabel(level) {
+  return MMShared.t(`panel.robust.${level}`);
+}
+
+function robustTitle(level) {
+  return MMShared.t(`panel.robust.${level}.title`);
+}
 
 // 行のセレクタ堅牢性チップを現在の表示形式に合わせて更新する。
 function applyRobustness(node, mark) {
@@ -388,8 +401,8 @@ function applyRobustness(node, mark) {
   if (!el) return;
   const level = selectorRobustness(mark);
   el.hidden = false;
-  el.textContent = ROBUST_LABEL[level];
-  el.title = ROBUST_TITLE[level];
+  el.textContent = robustLabel(level);
+  el.title = robustTitle(level);
   el.classList.remove("mm-robust--strong", "mm-robust--medium", "mm-robust--weak");
   el.classList.add(`mm-robust--${level}`);
 }
@@ -581,7 +594,7 @@ function buildItem(mark) {
   setupSelectorEdit(selector, mark);
   // 表示中の形式に応じてセレクタの壊れにくさの目安を出す
   applyRobustness(node, mark);
-  text.textContent = mark.text || "（テキストなし）";
+  text.textContent = mark.text || MMShared.t("panel.item.noText");
   detached.hidden = !mark.detached;
 
   // アイコンボタンのためテキストは差し替えず、成功時は緑のチェック状態（is-done）で示す
@@ -590,10 +603,10 @@ function buildItem(mark) {
     const ok = await copyText(selectorOf(mark));
     if (ok) {
       copyBtn.classList.add("is-done");
-      showToast(`#${mark.label} のセレクタをコピーしました`);
+      showToast(MMShared.t("panel.toast.copiedSelector", { n: mark.label }));
       setTimeout(() => copyBtn.classList.remove("is-done"), 1200);
     } else {
-      showToast("コピーに失敗しました");
+      showToast(MMShared.t("panel.toast.copyFailed"));
     }
   });
 
@@ -612,7 +625,7 @@ function buildItem(mark) {
     }
     const res = await sendToTab({ type: "MM_INSPECT_ELEMENT", id: mark.id });
     if (!res || !res.ok) {
-      showToast("対象が見つかりません（消失したマーカー）");
+      showToast(MMShared.t("panel.toast.detached"));
       return;
     }
     renderInspect(inspectBox, res.info);
@@ -934,12 +947,16 @@ async function reload(keepAnim = false) {
 
 document.getElementById("mm-copy-all").addEventListener("click", async () => {
   if (currentMarks.length === 0) {
-    showToast("コピーするマーカーがありません");
+    showToast(MMShared.t("panel.toast.noMarksToCopy"));
     return;
   }
   const all = currentMarks.map((m) => selectorOf(m)).join("\n");
   const ok = await copyText(all);
-  showToast(ok ? `${currentMarks.length}件のセレクタをコピーしました` : "コピーに失敗しました");
+  showToast(
+    ok
+      ? MMShared.t("panel.toast.copiedSelectors", { n: currentMarks.length })
+      : MMShared.t("panel.toast.copyFailed"),
+  );
 });
 
 document.getElementById("mm-clear-all").addEventListener("click", async () => {

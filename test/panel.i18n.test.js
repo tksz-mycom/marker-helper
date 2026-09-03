@@ -112,3 +112,19 @@ test("panel.html に data-i18n の無い日本語テキスト・属性が残っ�
 test("行テンプレートの中にも日本語テキスト・属性が残っていない", () => {
   expect(untranslated(document.getElementById("mm-item-tpl").content)).toEqual([]);
 });
+
+describe("動的文言", () => {
+  test("件数付きトーストが英語で単複を切り替える", () => {
+    i18n.setLang("en");
+    expect(i18n.t("panel.toast.copiedSelectors", { n: 1 })).toBe("Copied 1 selector");
+    expect(i18n.t("panel.toast.copiedSelectors", { n: 3 })).toBe("Copied 3 selectors");
+    i18n.setLang("ja");
+    expect(i18n.t("panel.toast.copiedSelectors", { n: 3 })).toBe("3件のセレクタをコピーしました");
+  });
+
+  test("コントラストの表示に等級を差し込める", () => {
+    i18n.setLang("en");
+    expect(i18n.t("panel.inspect.contrastValue", { value: "4.51", grade: "AA" })).toBe("4.51 : 1 (AA)");
+    i18n.setLang("ja");
+  });
+});

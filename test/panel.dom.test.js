@@ -176,4 +176,28 @@ describe("行の文言の日英切替", () => {
     panel.render([mark(1, { detached: true })]);
     expect(listEl.querySelector(".mm-detached").textContent).toBe("Lost");
   });
+
+  test("セレクタの堅牢性チップが英語になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1, { selector: "#unique" })]);
+    const chip = listEl.querySelector(".mm-robust");
+    expect(chip.textContent).toBe("Stable");
+    expect(chip.getAttribute("title")).toContain("Unlikely to break");
+  });
+
+  test("堅牢性チップは段数に応じて Fair / Fragile になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1, { selector: "body > div:nth-of-type(1)" })]);
+    expect(listEl.querySelector(".mm-robust").textContent).toBe("Fair");
+    panel.render([mark(1, { selector: "body > div:nth-of-type(1) > p:nth-of-type(2)" })]);
+    expect(listEl.querySelector(".mm-robust").textContent).toBe("Fragile");
+  });
+
+  test("セレクタ表示の説明が英語になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1)]);
+    const code = listEl.querySelector(".mm-selector");
+    expect(code.getAttribute("aria-label")).toBe("Selector (click to edit)");
+    expect(code.getAttribute("title")).toBe("Click to edit (Enter to apply, Esc to cancel)");
+  });
 });
