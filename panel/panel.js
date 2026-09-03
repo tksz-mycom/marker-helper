@@ -39,8 +39,7 @@ function matchesFilter(mark) {
 filterEl.addEventListener("input", () => {
   filterText = filterEl.value.trim().toLowerCase();
   // 絞り込みの再描画ではフェードイン（点滅）を抑止する
-  suppressAnimOnce = true;
-  render(currentMarks);
+  rerenderQuiet();
 });
 
 // 表示・コピーするセレクタ形式（"css" | "xpath"）。panel 専用の UI 設定として永続化する。
@@ -94,8 +93,7 @@ selFormatEl.addEventListener("click", (e) => {
   applySelectorFormatUI();
   saveSelectorFormat();
   // 表示中のセレクタ文字列を切り替えるため再描画（点滅は抑止）
-  suppressAnimOnce = true;
-  render(currentMarks);
+  rerenderQuiet();
 });
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
@@ -136,8 +134,7 @@ includeMarksEl.addEventListener("change", () => {
   saveShotMarks();
   // 未上書きの行を新しい既定値に追従させるため再描画する。
   // 既定値の切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する。
-  suppressAnimOnce = true;
-  render(currentMarks);
+  rerenderQuiet();
 });
 
 // ---- マーキングモード -------------------------------------------------
@@ -484,8 +481,7 @@ function wireStyleEditor(node, mark) {
 
   // 確定値を content へ送る。再描画のフェードイン（点滅）は抑止する。
   const sendPatch = (patch) => {
-    suppressAnimOnce = true;
-    sendToTab({ type: "MM_SET_MARK_STYLE", id: mark.id, patch });
+    sendQuiet({ type: "MM_SET_MARK_STYLE", id: mark.id, patch });
   };
 
   // 線種セグメント（実線/破線/点線）。クリックで即時に確定する。
@@ -558,8 +554,7 @@ function wireStyleEditor(node, mark) {
   // 継承(null)のときはグローバル既定の実効値を表示。チェック操作で明示的な上書きになる。
   showLabelEl.checked = MMShared.effectiveShowLabel(mark.showLabel, globalShowLabel);
   showLabelEl.addEventListener("change", () => {
-    suppressAnimOnce = true;
-    sendToTab({ type: "MM_SET_MARK_LABEL", id: mark.id, show: showLabelEl.checked });
+    sendQuiet({ type: "MM_SET_MARK_LABEL", id: mark.id, show: showLabelEl.checked });
   });
 }
 
@@ -646,8 +641,7 @@ function buildItem(mark) {
   colorEl.value = mark.color;
   colorEl.addEventListener("change", () => {
     // 変更通知による再描画でのフェードイン（点滅）を抑止する
-    suppressAnimOnce = true;
-    sendToTab({ type: "MM_SET_MARK_COLOR", id: mark.id, color: colorEl.value });
+    sendQuiet({ type: "MM_SET_MARK_STYLE", id: mark.id, patch: { color: colorEl.value } });
   });
 
   // 枠の詳細設定（線種・線幅・余白・角丸・透明度）を歯車ボタンで開閉する吹き出し。
@@ -660,8 +654,7 @@ function buildItem(mark) {
   groupEl.value = mark.group || "";
   groupEl.addEventListener("change", () => {
     // content が broadcast で再描画するため、フェードイン（点滅）を抑止する
-    suppressAnimOnce = true;
-    sendToTab({ type: "MM_SET_GROUP", id: mark.id, group: groupEl.value });
+    sendQuiet({ type: "MM_SET_GROUP", id: mark.id, group: groupEl.value });
   });
 
   // メモ（注釈）。content は再描画を伴わないため、確定時（change）に送って反映する。
@@ -701,6 +694,18 @@ function buildItem(mark) {
 let currentMarks = [];
 // 並べ替え直後の再描画ではフェードイン（点滅）を1回だけ抑制する
 let suppressAnimOnce = false;
+
+// フェードイン（点滅）を1回だけ抑止して描き直す／送る。
+// 「抑止フラグを立ててから更新する」規則を呼び出し側に手書きさせないためのヘルパー。
+function rerenderQuiet() {
+  suppressAnimOnce = true;
+  render(currentMarks);
+}
+
+function sendQuiet(message) {
+  suppressAnimOnce = true;
+  return sendToTab(message);
+}
 // content の state.showLabel（連番表示のグローバル既定）。継承(null)マークの実効表示判定に使う。
 let globalShowLabel = false;
 // ドラッグ中は再描画を抑止し、掴んでいる要素が破棄されないようにする
@@ -781,8 +786,7 @@ function commitOrder() {
   const ids = [...listEl.querySelectorAll(".mm-item")].map((li) => Number(li.dataset.id));
   relabelDom();
   // この直後に届く更新通知の再描画ではアニメを抑制する
-  suppressAnimOnce = true;
-  sendToTab({ type: "MM_REORDER_MARKS", ids });
+  sendQuiet({ type: "MM_REORDER_MARKS", ids });
 }
 
 // 上下移動ボタンによる並べ替え。ドラッグの代替として隣接行と入れ替え、表示番号を
@@ -986,34 +990,12 @@ function nowStamp() {
 }
 
 function downloadJson(data, filename) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }), filename);
 }
 
 // 任意のテキストをファイルとして保存する（CSV / Markdown 用）。
 function downloadText(text, filename, mime) {
-  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
-  const url = URL.createObjectURL(blob);
-  try {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  downloadBlob(new Blob([text], { type: `${mime};charset=utf-8` }), filename);
 }
 
 // 一覧の各行に出力する列（CSV / Markdown 共通）。
@@ -1319,17 +1301,6 @@ async function stitchTallBlob(page, dpr, viewport) {
 
 // 対象マークのビューポート画像を取得し、要素部分を切り出した Blob を返す。
 // clean=true なら枠・番号を含めない。撮影後は必ず content の表示を復帰させる。
-// 「マーカー込み」が未チェックの行の id を集める。撮影時に枠・番号を隠す対象。
-// 1枚の画像に複数マークが写り込むため、各マークの設定を個別に反映させる。
-function excludedMarkIds() {
-  const ids = [];
-  listEl.querySelectorAll(".mm-item").forEach((li) => {
-    const cb = li.querySelector(".mm-act-shot-incl");
-    if (cb && !cb.checked) ids.push(Number(li.dataset.id));
-  });
-  return ids;
-}
-
 // マークの「マーカー込み」実効値（行の上書き優先、無ければヘッダー既定）。
 // 絞り込みで DOM に無い行でも参照できるよう、状態から直接求める。
 function shotInclOf(id) {
@@ -1337,11 +1308,12 @@ function shotInclOf(id) {
 }
 
 // 全マークから、撮影時に枠・番号を隠す（未チェックの）id を集める。
+// 1枚の画像に複数マークが写り込むため、各マークの設定を個別に反映させる。
 function hideIdsFromState() {
   return currentMarks.filter((m) => !shotInclOf(m.id)).map((m) => m.id);
 }
 
-async function captureMarkBlob(mark, clean, hideIds = excludedMarkIds()) {
+async function captureMarkBlob(mark, clean, hideIds = hideIdsFromState()) {
   if (activeTabId == null) return { ok: false, reason: "unsupported" };
   const prep = await sendToTab({
     type: "MM_CAPTURE_PREPARE",
@@ -1717,14 +1689,12 @@ async function bootI18n() {
   // 言語確定より前に描かれた行（reload()の並走やMM_MARKS_UPDATEDのbroadcast由来）が
   // 古い言語の命令的文言（robustのlabel/title・セレクタのaria-label/title等）のまま
   // 固定されないよう、確定直後に一覧を必ず作り直す。
-  suppressAnimOnce = true;
-  render(currentMarks);
+  rerenderQuiet();
   const rerender = () => {
     MMShared.applyDocumentLang(document);
     applyDropHint();
     // 言語切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する
-    suppressAnimOnce = true;
-    render(currentMarks);
+    rerenderQuiet();
   };
   const reflect = MMShared.wireLangToggle(langEl, rerender);
   MMShared.watchLang(() => {

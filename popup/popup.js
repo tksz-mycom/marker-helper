@@ -62,21 +62,14 @@ let editingIndex = -1;
 // 角の形式（CSS corner-shape）の値の判定・整形は shared/cornerShape.js に集約している
 // （プリセットのキーワードと superellipse(k) の数値指定。0=面取り / 1=標準 / 2=なめらか）。
 
-// マーカーの余白・角丸は 0〜40px（1px刻み）
-const MAX_SPACING = 40;
-const clampSpacing = (n) =>
-  Math.min(MAX_SPACING, Math.max(0, Math.round(Number(n) || 0)));
+// n を [min, max] に丸めた整数にする（数値化できなければ min）。
+const clampInt = (n, min, max) => Math.min(max, Math.max(min, Math.round(Number(n) || min)));
 
-// 線幅は 1〜20px（1px刻み）。細/中/太のプリセットと共通の値域
-const MIN_WIDTH = 1;
-const MAX_WIDTH = 20;
-const clampWidth = (n) =>
-  Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(Number(n) || MIN_WIDTH)));
-
-// 透明度は 0〜100%（1%刻み）
-const MAX_TRANSPARENCY = 100;
-const clampTransparency = (n) =>
-  Math.min(MAX_TRANSPARENCY, Math.max(0, Math.round(Number(n) || 0)));
+// マーカーの余白・角丸は 0〜40px、線幅は 1〜20px、透明度は 0〜100%（いずれも1刻み）。
+// content 側の sanitizeStyle と同じ値域（content を信頼境界とする多層防御）。
+const clampSpacing = (n) => clampInt(n, 0, 40);
+const clampWidth = (n) => clampInt(n, 1, 20);
+const clampTransparency = (n) => clampInt(n, 0, 100);
 
 const UNSUPPORTED = /^(chrome|edge|brave|about|chrome-extension|view-source|devtools|data):/i;
 
@@ -527,6 +520,11 @@ async function bootI18n() {
 // ---- 初期化 -----------------------------------------------------------
 
 async function init() {
+  // 言語・マイカラー・対象タブの取得は互いに独立なので、直列に待たず先に走らせる
+  // （popup は開いてから描画されるまでがそのまま体感になる）。
+  const tabPromise = getActiveTab();
+  const colorsPromise = loadCustomColors();
+
   // 言語は非対応ページでも切り替えられるよう、早期 return より前に適用する
   await bootI18n();
 
@@ -535,10 +533,10 @@ async function init() {
   // 同期描画して高さを確保しておき、storage 読込後の再描画でポップアップの高さが
   // 変わって「表示された瞬間にガタつく」のを防ぐ（読込後も同じ18マスで高さは不変）。
   buildMyPalette();
-  await loadCustomColors();
+  await colorsPromise;
   buildMyPalette();
 
-  const tab = await getActiveTab();
+  const tab = await tabPromise;
   if (!tab || !tab.id || !tab.url || UNSUPPORTED.test(tab.url)) {
     showUnsupported();
     return;

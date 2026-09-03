@@ -55,6 +55,11 @@
     };
   }
 
+  // 枠スタイルの項目一覧。列挙が要るのは値域ごとに検証が違う sanitizeStyle だけにし、
+  // 「スタイル項目をまとめて取り出す」用途はこの1箇所から導出する。
+  const STYLE_KEYS = ["color", "lineStyle", "width", "padding", "radius", "cornerShape", "transparency"];
+  const pickStyle = (src) => Object.fromEntries(STYLE_KEYS.map((k) => [k, src[k]]));
+
   // ---- 設定の永続化 -----------------------------------------------------
   // 最後に選んだスタイルとラベル表示は chrome.storage.local に保存し、
   // 次回の content 注入時（新規ページ・リロード）に復元する。
@@ -266,11 +271,7 @@
   // ---- CSS セレクタ生成 -------------------------------------------------
 
   function uniqueById(id) {
-    try {
-      return document.querySelectorAll(`#${CSS.escape(id)}`).length === 1;
-    } catch {
-      return false;
-    }
+    return isUniqueSelector(`#${CSS.escape(id)}`);
   }
 
   function nthOfType(node) {
@@ -364,12 +365,7 @@
         segs.unshift("html");
         break;
       }
-      let idx = 1;
-      let sib = node;
-      while ((sib = sib.previousElementSibling)) {
-        if (sib.nodeName === node.nodeName) idx++;
-      }
-      segs.unshift(`${node.nodeName.toLowerCase()}[${idx}]`);
+      segs.unshift(`${node.nodeName.toLowerCase()}[${nthOfType(node)}]`);
       node = node.parentElement;
     }
     return `/${segs.join("/")}`;
@@ -433,13 +429,7 @@
       text: snippet(el),
       note: sanitizeNote(note),
       group: sanitizeGroup(group),
-      color: st.color,
-      lineStyle: st.lineStyle,
-      width: st.width,
-      padding: st.padding,
-      radius: st.radius,
-      cornerShape: st.cornerShape || "round",
-      transparency: st.transparency,
+      ...pickStyle(st),
       // 連番バッジの表示はマークごとに3状態で保持する: true=常に表示 / false=常に非表示 /
       // null=グローバル既定(state.showLabel)を継承。明示値の無い新規・旧データは継承(null)とし、
       // 実効値は毎描画で動的評価する（旧データに既定値を焼き込まない）。
@@ -480,7 +470,7 @@
   function importMarks(items) {
     if (!Array.isArray(items)) return { ok: false, restored: 0, skipped: 0 };
     ensureOverlay();
-    clearAll(); // 置き換え方式: 既存マークを一旦すべて消す
+    clearAll(true); // 置き換え方式: 既存マークを一旦すべて消す（通知は復元後にまとめて行う）
 
     let restored = 0;
     let skipped = 0;
@@ -551,19 +541,6 @@
     scheduleAutosave();
   }
 
-  // 既存マークの色だけを変更する（新規マークの既定スタイルには影響しない）。
-  // 枠・バッジへ即時反映し、panel の一覧へも通知する。
-  function setMarkColor(id, color) {
-    if (!HEX_COLOR_RE.test(color)) return;
-    const mark = state.marks.find((m) => m.id === id);
-    if (!mark) return;
-    mark.color = color;
-    mark.badge.style.background = color;
-    styleBox(mark.box, mark);
-    broadcast();
-    scheduleAutosave();
-  }
-
   // 既存マークの枠スタイル（色以外も含む）を個別に変更する。patch には
   // color/lineStyle/width/padding/radius/cornerShape/transparency のうち変更分だけを渡す。
   // 与えられなかった項目・不正値は現在値を維持する（sanitizeStyle のフォールバック）。
@@ -572,23 +549,9 @@
     if (!patch || typeof patch !== "object") return;
     const mark = state.marks.find((m) => m.id === id);
     if (!mark) return;
-    const current = {
-      color: mark.color,
-      lineStyle: mark.lineStyle,
-      width: mark.width,
-      padding: mark.padding,
-      radius: mark.radius,
-      cornerShape: mark.cornerShape,
-      transparency: mark.transparency,
-    };
+    const current = pickStyle(mark);
     const next = sanitizeStyle({ ...current, ...patch }, current);
-    mark.color = next.color;
-    mark.lineStyle = next.lineStyle;
-    mark.width = next.width;
-    mark.padding = next.padding;
-    mark.radius = next.radius;
-    mark.cornerShape = next.cornerShape;
-    mark.transparency = next.transparency;
+    Object.assign(mark, next);
     mark.badge.style.background = next.color;
     styleBox(mark.box, mark);
     // padding は枠の寸法に影響するため、追従ループの次フレームを待たず即時に反映する
@@ -608,13 +571,16 @@
     scheduleAutosave();
   }
 
-  function clearAll() {
+  // silent=true のときは通知・自動保存をしない。直後に別途 broadcast する
+  // 置き換え（importMarks）で、空リストの描画が1回無駄に走るのを避けるため。
+  function clearAll(silent = false) {
     for (const mark of state.marks) {
       mark.box.remove();
       mark.badge.remove();
     }
     state.marks = [];
     state.counter = 0;
+    if (silent) return;
     broadcast();
     scheduleAutosave();
   }
@@ -845,10 +811,8 @@
     capturing = true;
     // 直前の撮影で隠した要素が残っていれば先に復帰してから隠し直す
     restoreHidden();
-    // 未チェック（hideIds に列挙）のマークだけ枠・番号を隠す。後方互換として
-    // hideIds 未指定で clean のときは対象のみ隠す（従来の単体撮影と同等）。
+    // 未チェック（hideIds に列挙）のマークだけ枠・番号を隠す。
     const hideSet = new Set(Array.isArray(hideIds) ? hideIds : []);
-    if (!Array.isArray(hideIds) && clean) hideSet.add(id);
     for (const m of state.marks) {
       if (!hideSet.has(m.id)) continue;
       for (const el of [m.box, m.badge]) {
@@ -949,9 +913,10 @@
 
   // ---- 状態の直列化と通知 ----------------------------------------------
 
-  function serializeMarks() {
-    return state.marks.map((m) => ({
-      id: m.id,
+  // マーク1件の直列化。復元に必要なスタイル（padding/radius/cornerShape/transparency 含む）を
+  // 全て出す。項目を増やすときはここだけを直せば表示用・エクスポート用の両方に載る。
+  function serializeMark(m) {
+    return {
       label: m.label,
       selector: m.selector,
       xpath: m.xpath,
@@ -959,39 +924,20 @@
       text: m.text,
       note: m.note,
       group: m.group,
-      color: m.color,
-      lineStyle: m.lineStyle,
-      width: m.width,
-      padding: m.padding,
-      radius: m.radius,
-      cornerShape: m.cornerShape,
-      transparency: m.transparency,
+      ...pickStyle(m),
       showLabel: m.showLabel,
       detached: !document.contains(m.el),
-    }));
+    };
   }
 
-  // エクスポート用: 復元に必要なスタイル（padding/radius/transparency 含む）を全て出す。
-  // 表示用の serializeMarks とは別物（内部 id は端末固有のため含めない）。
+  // 表示用: 内部 id を添えて panel/popup へ渡す。
+  function serializeMarks() {
+    return state.marks.map((m) => ({ id: m.id, ...serializeMark(m) }));
+  }
+
+  // エクスポート用: 内部 id は端末固有のため含めない。
   function serializeMarksForExport() {
-    return state.marks.map((m) => ({
-      label: m.label,
-      selector: m.selector,
-      xpath: m.xpath,
-      tag: m.tag,
-      text: m.text,
-      note: m.note,
-      group: m.group,
-      color: m.color,
-      lineStyle: m.lineStyle,
-      width: m.width,
-      padding: m.padding,
-      radius: m.radius,
-      cornerShape: m.cornerShape,
-      transparency: m.transparency,
-      showLabel: m.showLabel,
-      detached: !document.contains(m.el),
-    }));
+    return state.marks.map(serializeMark);
   }
 
   function broadcast() {
@@ -1126,10 +1072,6 @@
         break;
       case "MM_SET_GROUP":
         setGroup(msg.id, msg.group);
-        sendResponse({ ok: true });
-        break;
-      case "MM_SET_MARK_COLOR":
-        setMarkColor(msg.id, msg.color);
         sendResponse({ ok: true });
         break;
       case "MM_SET_MARK_STYLE":
