@@ -182,8 +182,8 @@ function createColorSlot(color, index) {
   slot.className = "mm-myslot";
   slot.style.background = color;
   slot.dataset.color = color;
-  slot.title = "クリックで選択／ダブルクリックで色を変更";
-  slot.setAttribute("aria-label", `マイカラー ${color}（ダブルクリックで色変更）`);
+  slot.title = MMShared.t("popup.myColor.slotTitle");
+  slot.setAttribute("aria-label", MMShared.t("popup.myColor.slotAria", { color }));
   slot.addEventListener("click", () => setColor(color));
   // ダブルクリックで既存スロットの色を後から変更できる
   slot.addEventListener("dblclick", (e) => {
@@ -196,7 +196,7 @@ function createColorSlot(color, index) {
   del.className = "mm-myslot-del";
   del.textContent = "×";
   del.setAttribute("role", "button");
-  del.setAttribute("aria-label", `${color} を削除`);
+  del.setAttribute("aria-label", MMShared.t("popup.myColor.remove", { color }));
   del.addEventListener("click", (e) => {
     e.stopPropagation();
     removeCustomColor(index);
@@ -211,7 +211,7 @@ function createAddSlot() {
   add.type = "button";
   add.className = "mm-myslot-add";
   add.textContent = "＋";
-  add.setAttribute("aria-label", "色を選んでマイカラーに追加");
+  add.setAttribute("aria-label", MMShared.t("popup.myColor.add"));
   add.addEventListener("click", openAddColor);
   return add;
 }
@@ -478,7 +478,7 @@ function wireEvents() {
       await chrome.sidePanel.open({ tabId: activeTabId });
       window.close();
     } catch (err) {
-      console.error("[Marker:HELPER] サイドパネルを開けません:", err);
+      console.error("[Marker:HELPER] サイドパネルを開けません:", err); // i18n-ignore
     }
   });
 
@@ -494,7 +494,7 @@ function wireEvents() {
       });
       window.close();
     } catch (err) {
-      console.error("[Marker:HELPER] ウィンドウを開けません:", err);
+      console.error("[Marker:HELPER] ウィンドウを開けません:", err); // i18n-ignore
     }
   });
 
@@ -509,12 +509,17 @@ function wireEvents() {
 }
 
 // 表示言語を解決して画面へ反映し、切替トグルとパネル側の変更追従を配線する。
+// マイカラーは JS が組み立てるため、静的文言の再適用に加えて描き直しが要る。
 async function bootI18n() {
   await MMShared.loadLang();
   MMShared.applyDocumentLang(document);
-  const reflect = MMShared.wireLangToggle(els.lang, () => MMShared.applyDocumentLang(document));
-  MMShared.watchLang(() => {
+  const refresh = () => {
     MMShared.applyDocumentLang(document);
+    buildMyPalette();
+  };
+  const reflect = MMShared.wireLangToggle(els.lang, refresh);
+  MMShared.watchLang(() => {
+    refresh();
     reflect();
   });
 }

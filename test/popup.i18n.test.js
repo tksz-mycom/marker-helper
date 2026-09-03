@@ -123,3 +123,15 @@ function untranslated(scope) {
 test("popup.html に data-i18n の無い日本語テキスト・属性が残っていない", () => {
   expect(untranslated(document)).toEqual([]);
 });
+
+describe("マイカラーの動的文言", () => {
+  test("英語で色コードを差し込める", () => {
+    i18n.setLang("en");
+    expect(i18n.t("popup.myColor.remove", { color: "#ff3b30" })).toBe("Remove #ff3b30");
+    expect(i18n.t("popup.myColor.slotAria", { color: "#ff3b30" })).toBe(
+      "My color #ff3b30 (double-click to change)",
+    );
+    i18n.setLang("ja");
+    expect(i18n.t("popup.myColor.remove", { color: "#ff3b30" })).toBe("#ff3b30 を削除");
+  });
+});

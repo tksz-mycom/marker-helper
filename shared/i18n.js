@@ -64,6 +64,10 @@
       "popup.corner.square.title": "square: 角丸なし（直角）",
       "popup.corner.superellipse.title": "superellipse(k): 曲率を数値で指定（0=面取り, 1=標準, 2=なめらか）",
       "popup.corner.hint": "このブラウザは角の形式に未対応のため「標準」で表示されます",
+      "popup.myColor.slotTitle": "クリックで選択／ダブルクリックで色を変更",
+      "popup.myColor.slotAria": "マイカラー {color}（ダブルクリックで色変更）",
+      "popup.myColor.remove": "{color} を削除",
+      "popup.myColor.add": "色を選んでマイカラーに追加",
     },
     en: {
       "common.language": "Language",
@@ -119,6 +123,10 @@
       "popup.corner.square.title": "square: no rounding (right angle)",
       "popup.corner.superellipse.title": "superellipse(k): set curvature numerically (0=bevel, 1=round, 2=smooth)",
       "popup.corner.hint": "This browser does not support corner shapes, so Round is used.",
+      "popup.myColor.slotTitle": "Click to select, double-click to change the color",
+      "popup.myColor.slotAria": "My color {color} (double-click to change)",
+      "popup.myColor.remove": "Remove {color}",
+      "popup.myColor.add": "Pick a color to add to My colors",
     },
   };
 
