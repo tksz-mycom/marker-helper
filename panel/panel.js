@@ -1079,7 +1079,7 @@ function buildPlaywright(marks, url) {
   const lines = [
     "import { test, expect } from '@playwright/test';",
     "",
-    `test('${MMShared.t("export.testName")}', async ({ page }) => {`,
+    `test(${jsString(MMShared.t("export.testName"))}, async ({ page }) => {`,
   ];
   if (url) lines.push(`  await page.goto(${jsString(url)});`);
   for (const m of marks) {
@@ -1098,8 +1098,8 @@ function buildCypress(marks, url) {
     lines.push(`// ${MMShared.t("export.cypressXpathNote")}`, "");
   }
   lines.push(
-    `describe('${MMShared.t("export.testName")}', () => {`,
-    `  it('${MMShared.t("export.itName")}', () => {`,
+    `describe(${jsString(MMShared.t("export.testName"))}, () => {`,
+    `  it(${jsString(MMShared.t("export.itName"))}, () => {`,
   );
   if (url) lines.push(`    cy.visit(${jsString(url)});`);
   for (const m of marks) {
