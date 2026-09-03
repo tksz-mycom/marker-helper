@@ -690,3 +690,21 @@ body {
 .mm-count-badge[hidden] {
   display: none;
 }
+
+/* 言語が確定するまで一瞬だけ既定文言（日本語）が見えるのを防ぐ。
+   display ではなく visibility なので高さは確保され、開いた直後のガタつきが起きない。 */
+.mm-i18n-pending {
+  visibility: hidden;
+}
+
+/* ヘッダーの JA/EN 切替。既存のセグメントより一段小さくして主操作を邪魔しない。 */
+.mm-lang {
+  margin-left: auto;
+  flex: none;
+}
+.mm-lang button {
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}

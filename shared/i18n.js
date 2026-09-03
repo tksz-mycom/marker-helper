@@ -10,8 +10,12 @@
   // 文言辞書。キーはフラットな文字列（例: "panel.toast.copied"）。
   // 件数を含む文言は ".one" / ".other" のサフィックスで単複を分ける。
   const MESSAGES = {
-    ja: {},
-    en: {},
+    ja: {
+      "common.language": "言語",
+    },
+    en: {
+      "common.language": "Language",
+    },
   };
 
   // 受け取った値が対応言語かを検証する。信頼境界（storage の値・DOM の値）で必ず通す。

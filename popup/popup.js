@@ -42,6 +42,7 @@ const els = {
   openPanel: document.getElementById("mm-open-panel"),
   openWindow: document.getElementById("mm-open-window"),
   count: document.getElementById("mm-count"),
+  lang: document.getElementById("mm-lang"),
 };
 
 let activeTabId = null;
@@ -507,9 +508,23 @@ function wireEvents() {
   });
 }
 
+// 表示言語を解決して画面へ反映し、切替トグルとパネル側の変更追従を配線する。
+async function bootI18n() {
+  await MMShared.loadLang();
+  MMShared.applyDocumentLang(document);
+  const reflect = MMShared.wireLangToggle(els.lang, () => MMShared.applyDocumentLang(document));
+  MMShared.watchLang(() => {
+    MMShared.applyDocumentLang(document);
+    reflect();
+  });
+}
+
 // ---- 初期化 -----------------------------------------------------------
 
 async function init() {
+  // 言語は非対応ページでも切り替えられるよう、早期 return より前に適用する
+  await bootI18n();
+
   buildSwatches();
   // マイカラーは登録数に関わらず常に18マス(9×2)固定で高さが一定。先に空グリッドを
   // 同期描画して高さを確保しておき、storage 読込後の再描画でポップアップの高さが

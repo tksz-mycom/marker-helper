@@ -6,10 +6,14 @@
     <title>Marker:HELPER</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
-  <body>
+  <body class="mm-i18n-pending">
     <header class="mm-head">
       <span class="mm-logo" aria-hidden="true"></span>
       <h1>Marker:HELPER</h1>
+      <div class="mm-segmented mm-lang" id="mm-lang" role="radiogroup" data-i18n-aria-label="common.language">
+        <button type="button" data-value="ja">JA</button>
+        <button type="button" data-value="en">EN</button>
+      </div>
       <button type="button" id="mm-open-window" class="mm-head-btn" title="一覧を別ウィンドウで開く（撮影時にページ幅を保てる）" aria-label="一覧を別ウィンドウで開く">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 3h6v6" />
@@ -187,6 +191,7 @@
     </main>
 
     <script src="../shared/cornerShape.js"></script>
+    <script src="../shared/i18n.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
