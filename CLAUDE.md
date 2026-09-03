@@ -78,6 +78,7 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 - **動的文言**: `MMShared.t(key, vars)`。`{n}` 形式のプレースホルダを展開し、`vars.n` があって `key.one` が辞書にあるキーだけ単複を分岐する。未定義のキーはキー文字列を返して `console.warn` する。
 - **キー命名**: `common.*`（popup と panel の共通）／`popup.*`／`panel.*`／`export.*`／`report.*` のフラットな文字列キー。
 - **言語切替に追従させる注意点**: 読み込み時に一度だけ評価されるトップレベル定数に文言を置くと切替後も古い言語が残る。`selectorErrorMessage` / `robustLabel` / `robustTitle` / `exportColumns` のように**参照時に辞書を引く関数**にすること。`buildItem` はテンプレート複製の直後に `applyI18n(node)` を呼ぶ。
+- **起動順序の注意点**: 言語の解決（`loadLang`）は動的描画（一覧の `render`）より先に完了させること。`reload()` や `MM_MARKS_UPDATED` の broadcast は言語確定を待たずに `render` を走らせうるため、panel は `bootI18n` 内で `loadLang` 確定直後に必ず `render(currentMarks)` をやり直し、確定前に描かれた行（`.mm-robust` の label/title・セレクタの aria-label/title 等、`applyI18n` が届かない命令的文言）が古い言語のまま残らないようにする。
 - **ちらつき対策**: `<body class="mm-i18n-pending">`（CSS で `visibility: hidden`）を `applyDocumentLang` が外す。`display` ではなく `visibility` なので高さは確保される。例外時に画面が隠れたままにならないよう 1 秒の保険解除も入れてある。
 - **レポート HTML**: 出力する HTML の `lang` 属性と日時の書式（`report.dateLocale` を `toLocaleString` に渡す）も現在の言語に合わせる。
 - **manifest**: 拡張の `description` とショートカット説明のみ `_locales/{ja,en}/messages.json` + `default_locale: "ja"` で多言語化する。**ここだけはブラウザの UI 言語に従い、拡張内のトグルでは変わらない**（Chrome の仕様）。拡張名は固有名のため翻訳しない。
