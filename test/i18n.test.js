@@ -99,4 +99,42 @@ describe("辞書", () => {
       }
     }
   });
+
+  // ".one" だけ足して ".other" を忘れると、単数以外は「警告付きのキー文字列」が
+  // そのまま画面に出てしまう。次の翻訳追加でこの対を崩さないための回帰テスト。
+  test(".one があるキーには .other も必ずある", () => {
+    for (const lang of ["ja", "en"]) {
+      const keys = Object.keys(i18n.MESSAGES[lang]);
+      const ones = keys.filter((k) => k.endsWith(".one"));
+      for (const oneKey of ones) {
+        const otherKey = oneKey.slice(0, -".one".length) + ".other";
+        expect(keys, `${lang}: ${otherKey}`).toContain(otherKey);
+      }
+    }
+  });
+
+  // 翻訳者が {n} 等のプレースホルダを訳文から落とすと、置換されず件数や名前が
+  // 消えたまま表示される。ja/en で使用するプレースホルダの集合を突き合わせる。
+  test("ja と en でプレースホルダ（{name}）の集合がキーごとに一致する", () => {
+    const placeholders = (s) => [...s.matchAll(/\{[a-zA-Z0-9_]+\}/g)].map((m) => m[0]).sort();
+    const jaKeys = Object.keys(i18n.MESSAGES.ja);
+    const mismatches = [];
+    for (const key of jaKeys) {
+      const enValue = i18n.MESSAGES.en[key];
+      if (enValue === undefined) continue; // キー集合の一致は別テストで検証済み
+      const ja = placeholders(i18n.MESSAGES.ja[key]);
+      const en = placeholders(enValue);
+      if (JSON.stringify(ja) !== JSON.stringify(en)) mismatches.push(key);
+    }
+    expect(mismatches).toEqual([]);
+  });
+
+  // report.dateLocale はキーが失われる（あるいは不正な値になる）と
+  // toLocaleString が RangeError を投げ、レポート生成が丸ごと失敗する（トーストも出ない）。
+  test("report.dateLocale が両言語とも toLocaleString で throw しない", () => {
+    for (const lang of ["ja", "en"]) {
+      const locale = i18n.MESSAGES[lang]["report.dateLocale"];
+      expect(() => new Date().toLocaleString(locale)).not.toThrow();
+    }
+  });
 });
