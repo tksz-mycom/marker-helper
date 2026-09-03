@@ -75,3 +75,40 @@ describe("ヘッダーと空状態の英語表示", () => {
     expect(document.getElementById("mm-nomatch").textContent).toBe("No markers match the filter.");
   });
 });
+
+// 行ではなく DOM で見る。要素と文言が別の行に分かれていても正しく判定できる。
+const JA_TEXT = /[぀-ヿ㐀-鿿]/;
+const I18N_ATTRS = [
+  ["title", "data-i18n-title"],
+  ["aria-label", "data-i18n-aria-label"],
+  ["placeholder", "data-i18n-placeholder"],
+];
+
+function untranslated(scope) {
+  const bad = [];
+  for (const el of scope.querySelectorAll("*")) {
+    // 自分が直接持つテキストノードだけを見る（子要素のテキストはその子で判定する）
+    const own = [...el.childNodes]
+      .filter((n) => n.nodeType === 3)
+      .map((n) => n.textContent)
+      .join("");
+    if (JA_TEXT.test(own) && !el.hasAttribute("data-i18n")) {
+      bad.push(`text: ${el.outerHTML.slice(0, 100)}`);
+    }
+    for (const [attr, marker] of I18N_ATTRS) {
+      const value = el.getAttribute(attr);
+      if (value && JA_TEXT.test(value) && !el.hasAttribute(marker)) {
+        bad.push(`${attr}: ${el.outerHTML.slice(0, 100)}`);
+      }
+    }
+  }
+  return bad;
+}
+
+test("panel.html に data-i18n の無い日本語テキスト・属性が残っていない", () => {
+  expect(untranslated(document)).toEqual([]);
+});
+
+test("行テンプレートの中にも日本語テキスト・属性が残っていない", () => {
+  expect(untranslated(document.getElementById("mm-item-tpl").content)).toEqual([]);
+});

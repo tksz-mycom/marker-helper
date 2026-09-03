@@ -553,6 +553,8 @@ function wireStyleEditor(node, mark) {
 function buildItem(mark) {
   const node = tpl.content.firstElementChild.cloneNode(true);
   node.dataset.id = String(mark.id);
+  // テンプレート由来の固定文言を現在の言語で当てる（属性も含む）
+  MMShared.applyI18n(node);
   const badge = node.querySelector(".mm-badge");
   // 並べ替えは番号バッジ（ハンドル）からのみ開始する。
   // li 全体を draggable にするとメモ入力のテキスト選択ができなくなるため。

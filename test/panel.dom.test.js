@@ -124,3 +124,56 @@ describe("panel render / 並べ替え（層2: jsdom）", () => {
     }
   });
 });
+
+describe("行の文言の日英切替", () => {
+  const i18n = require("../shared/i18n.js");
+
+  afterAll(() => {
+    i18n.setLang("ja");
+    panel.render([]);
+  });
+
+  test("英語にすると行内のボタンとプレースホルダが英語になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1)]);
+    const li = listEl.querySelector(".mm-item");
+    expect(li.querySelector(".mm-act-copy-text").textContent).toBe("Text");
+    expect(li.querySelector(".mm-act-inspect").textContent).toBe("Info");
+    expect(li.querySelector(".mm-act-shot").textContent).toBe("Save");
+    expect(li.querySelector(".mm-act-shot-copy").textContent).toBe("Copy");
+    expect(li.querySelector(".mm-note").getAttribute("placeholder")).toBe("Add a note…");
+    expect(li.querySelector(".mm-group").getAttribute("placeholder")).toBe("Group name (optional)…");
+    expect(li.querySelector(".mm-item-close").getAttribute("aria-label")).toBe("Clear this marker");
+  });
+
+  test("枠の詳細設定の中身も英語になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1)]);
+    const li = listEl.querySelector(".mm-item");
+    const labels = [...li.querySelectorAll(".mm-style-label")].map((s) => s.textContent);
+    expect(labels).toEqual([
+      "Transparency",
+      "Line style",
+      "Line width",
+      "Padding",
+      "Corner radius",
+      "Corner",
+      "Curvature",
+    ]);
+    const corners = [...li.querySelectorAll(".mm-style-corner option")].map((o) => o.textContent);
+    expect(corners).toEqual(["Round", "Smooth", "Bevel", "Scoop", "Notch", "Square", "Custom"]);
+  });
+
+  test("日本語へ戻すと行内も日本語に戻る", () => {
+    i18n.setLang("ja");
+    panel.render([mark(1)]);
+    const li = listEl.querySelector(".mm-item");
+    expect(li.querySelector(".mm-act-shot").textContent).toBe("保存");
+  });
+
+  test("消失マークの表示が英語になる", () => {
+    i18n.setLang("en");
+    panel.render([mark(1, { detached: true })]);
+    expect(listEl.querySelector(".mm-detached").textContent).toBe("Lost");
+  });
+});

@@ -123,17 +123,17 @@
         <div class="mm-rail">
           <span class="mm-badge"></span>
           <!-- ドラッグの代替: クリックで並び順を調整する（端ボタンは最上段／最下段へ一気に移動） -->
-          <div class="mm-move" role="group" aria-label="並び順の移動">
-            <button type="button" class="mm-move-btn mm-act-move-top" title="最上段へ移動" aria-label="最上段へ移動">
+          <div class="mm-move" role="group" data-i18n-aria-label="panel.item.move.aria" aria-label="並び順の移動">
+            <button type="button" class="mm-move-btn mm-act-move-top" data-i18n-title="panel.item.move.top" data-i18n-aria-label="panel.item.move.top" title="最上段へ移動" aria-label="最上段へ移動">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13l-6-6-6 6M18 18l-6-6-6 6" /></svg>
             </button>
-            <button type="button" class="mm-move-btn mm-act-move-up" title="1つ上へ移動" aria-label="1つ上へ移動">
+            <button type="button" class="mm-move-btn mm-act-move-up" data-i18n-title="panel.item.move.up" data-i18n-aria-label="panel.item.move.up" title="1つ上へ移動" aria-label="1つ上へ移動">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 15l-6-6-6 6" /></svg>
             </button>
-            <button type="button" class="mm-move-btn mm-act-move-down" title="1つ下へ移動" aria-label="1つ下へ移動">
+            <button type="button" class="mm-move-btn mm-act-move-down" data-i18n-title="panel.item.move.down" data-i18n-aria-label="panel.item.move.down" title="1つ下へ移動" aria-label="1つ下へ移動">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
             </button>
-            <button type="button" class="mm-move-btn mm-act-move-bottom" title="最下段へ移動" aria-label="最下段へ移動">
+            <button type="button" class="mm-move-btn mm-act-move-bottom" data-i18n-title="panel.item.move.bottom" data-i18n-aria-label="panel.item.move.bottom" title="最下段へ移動" aria-label="最下段へ移動">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l6 6 6-6M6 11l6 6 6-6" /></svg>
             </button>
           </div>
@@ -145,19 +145,19 @@
             <span class="mm-group-chip" hidden></span>
             <!-- 現在表示中のセレクタが壊れにくいかの目安（安定/普通/不安定） -->
             <span class="mm-robust" hidden></span>
-            <span class="mm-detached" hidden>消失</span>
+            <span class="mm-detached" data-i18n="panel.item.detached" hidden>消失</span>
           </div>
           <!-- セレクタ表示領域。右上にコピー・位置へのアイコンボタンを縦に重ねる -->
           <div class="mm-selector-wrap">
             <code class="mm-selector"></code>
             <div class="mm-selector-tools">
-              <button type="button" class="mm-selector-tool mm-act-copy" title="セレクタをコピー" aria-label="セレクタをコピー">
+              <button type="button" class="mm-selector-tool mm-act-copy" data-i18n-title="panel.item.copySelector" data-i18n-aria-label="panel.item.copySelector" title="セレクタをコピー" aria-label="セレクタをコピー">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                 </svg>
               </button>
-              <button type="button" class="mm-selector-tool mm-act-locate" title="要素の位置へ移動" aria-label="要素の位置へ移動">
+              <button type="button" class="mm-selector-tool mm-act-locate" data-i18n-title="panel.item.locate" data-i18n-aria-label="panel.item.locate" title="要素の位置へ移動" aria-label="要素の位置へ移動">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -167,112 +167,112 @@
           </div>
           <span class="mm-text"></span>
           <!-- 要素まわりの操作: 中身（テキスト/HTML）のコピーと情報の表示を1行にまとめる -->
-          <div class="mm-content-copy" role="group" aria-label="要素の操作">
-            <button type="button" class="mm-act mm-act-copy-text">テキスト</button>
+          <div class="mm-content-copy" role="group" data-i18n-aria-label="panel.item.elementActions" aria-label="要素の操作">
+            <button type="button" class="mm-act mm-act-copy-text" data-i18n="panel.item.copyText">テキスト</button>
             <button type="button" class="mm-act mm-act-copy-html">HTML</button>
-            <button type="button" class="mm-act mm-act-inspect" aria-expanded="false" aria-label="要素の情報を表示" title="要素の情報を表示（サイズ・色・コントラスト・role）">情報</button>
+            <button type="button" class="mm-act mm-act-inspect" aria-expanded="false" data-i18n="panel.item.inspect.label" data-i18n-aria-label="panel.item.inspect.aria" data-i18n-title="panel.item.inspect.title" aria-label="要素の情報を表示" title="要素の情報を表示（サイズ・色・コントラスト・role）">情報</button>
           </div>
           <!-- 要素のインスペクト情報（クリックで開閉・内容は開いたときに取得する） -->
           <dl class="mm-inspect" hidden></dl>
           <!-- 分類用のグループ名（任意）。同名は同色のチップでまとまり、絞り込み対象にもなる -->
-          <input type="text" class="mm-group" maxlength="30" placeholder="グループ名（任意）…" aria-label="グループ名" />
+          <input type="text" class="mm-group" maxlength="30" data-i18n-placeholder="panel.item.group.placeholder" data-i18n-aria-label="panel.item.group.aria" placeholder="グループ名（任意）…" aria-label="グループ名" />
           <!-- マーカーごとの自由記述メモ（注釈）。エクスポートにも含まれる -->
-          <input type="text" class="mm-note" maxlength="500" placeholder="メモを追加…" aria-label="メモ" />
+          <input type="text" class="mm-note" maxlength="500" data-i18n-placeholder="panel.item.note.placeholder" data-i18n-aria-label="panel.item.note.aria" placeholder="メモを追加…" aria-label="メモ" />
           <div class="mm-item-actions">
             <!-- 色スウォッチと枠の詳細設定（吹き出し）を1つのクラスタにまとめる -->
             <div class="mm-style-cluster">
               <!-- このマーカーの色を個別に変更する（新規マークの既定色には影響しない） -->
-              <label class="mm-color" title="このマーカーの色を変更">
-                <input type="color" class="mm-act-color" aria-label="マーカーの色" />
+              <label class="mm-color" data-i18n-title="panel.item.color.title" title="このマーカーの色を変更">
+                <input type="color" class="mm-act-color" data-i18n-aria-label="panel.item.color.aria" aria-label="マーカーの色" />
               </label>
               <!-- 既定では非表示の枠設定（線種・線幅・余白・角丸・透明度）を開く歯車ボタン -->
-              <button type="button" class="mm-act-style-toggle" aria-expanded="false" aria-haspopup="dialog" title="枠の詳細設定（線種・線幅・余白・角丸・透明度）" aria-label="枠の詳細設定">
+              <button type="button" class="mm-act-style-toggle" aria-expanded="false" aria-haspopup="dialog" data-i18n-title="panel.item.style.title" data-i18n-aria-label="panel.item.style.aria" title="枠の詳細設定（線種・線幅・余白・角丸・透明度）" aria-label="枠の詳細設定">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="3" />
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
                 </svg>
               </button>
               <!-- 枠の詳細設定の吹き出し。既定では非表示で、歯車ボタンで開閉する -->
-              <div class="mm-style-pop" role="dialog" aria-label="枠の詳細設定" hidden>
+              <div class="mm-style-pop" role="dialog" data-i18n-aria-label="panel.item.style.aria" aria-label="枠の詳細設定" hidden>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">透明度</span>
-                  <input type="range" class="mm-range mm-style-transparency" min="0" max="100" step="1" aria-label="透明度" />
-                  <input type="number" class="mm-num mm-style-transparency-num" min="0" max="100" step="1" aria-label="透明度(%)" />
+                  <span class="mm-style-label" data-i18n="common.transparency">透明度</span>
+                  <input type="range" class="mm-range mm-style-transparency" min="0" max="100" step="1" data-i18n-aria-label="common.transparency" aria-label="透明度" />
+                  <input type="number" class="mm-num mm-style-transparency-num" min="0" max="100" step="1" data-i18n-aria-label="common.transparencyPct" aria-label="透明度(%)" />
                   <span class="mm-unit">%</span>
                 </div>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">線種</span>
-                  <div class="mm-segmented mm-style-line" role="radiogroup" aria-label="線種">
-                    <button type="button" data-value="solid">実線</button>
-                    <button type="button" data-value="dashed">破線</button>
-                    <button type="button" data-value="dotted">点線</button>
+                  <span class="mm-style-label" data-i18n="common.lineStyle">線種</span>
+                  <div class="mm-segmented mm-style-line" role="radiogroup" data-i18n-aria-label="common.lineStyle" aria-label="線種">
+                    <button type="button" data-value="solid" data-i18n="common.line.solid">実線</button>
+                    <button type="button" data-value="dashed" data-i18n="common.line.dashed">破線</button>
+                    <button type="button" data-value="dotted" data-i18n="common.line.dotted">点線</button>
                   </div>
                 </div>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">線幅</span>
-                  <input type="range" class="mm-range mm-style-width" min="1" max="20" step="1" aria-label="線幅" />
-                  <input type="number" class="mm-num mm-style-width-num" min="1" max="20" step="1" aria-label="線幅(px)" />
+                  <span class="mm-style-label" data-i18n="common.lineWidth">線幅</span>
+                  <input type="range" class="mm-range mm-style-width" min="1" max="20" step="1" data-i18n-aria-label="common.lineWidth" aria-label="線幅" />
+                  <input type="number" class="mm-num mm-style-width-num" min="1" max="20" step="1" data-i18n-aria-label="common.lineWidthPx" aria-label="線幅(px)" />
                   <span class="mm-unit">px</span>
                 </div>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">余白</span>
-                  <input type="range" class="mm-range mm-style-padding" min="0" max="40" step="1" aria-label="余白" />
-                  <input type="number" class="mm-num mm-style-padding-num" min="0" max="40" step="1" aria-label="余白(px)" />
+                  <span class="mm-style-label" data-i18n="common.padding">余白</span>
+                  <input type="range" class="mm-range mm-style-padding" min="0" max="40" step="1" data-i18n-aria-label="common.padding" aria-label="余白" />
+                  <input type="number" class="mm-num mm-style-padding-num" min="0" max="40" step="1" data-i18n-aria-label="common.paddingPx" aria-label="余白(px)" />
                   <span class="mm-unit">px</span>
                 </div>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">角丸</span>
-                  <input type="range" class="mm-range mm-style-radius" min="0" max="40" step="1" aria-label="角丸" />
-                  <input type="number" class="mm-num mm-style-radius-num" min="0" max="40" step="1" aria-label="角丸(px)" />
+                  <span class="mm-style-label" data-i18n="common.radius">角丸</span>
+                  <input type="range" class="mm-range mm-style-radius" min="0" max="40" step="1" data-i18n-aria-label="common.radius" aria-label="角丸" />
+                  <input type="number" class="mm-num mm-style-radius-num" min="0" max="40" step="1" data-i18n-aria-label="common.radiusPx" aria-label="角丸(px)" />
                   <span class="mm-unit">px</span>
                 </div>
                 <div class="mm-style-row">
-                  <span class="mm-style-label">角の形</span>
-                  <select class="mm-select mm-style-corner" aria-label="角の形式" title="角の形式（CSS corner-shape）">
-                    <option value="round">標準</option>
-                    <option value="squircle">なめらか</option>
-                    <option value="bevel">面取り</option>
-                    <option value="scoop">えぐり</option>
-                    <option value="notch">切り欠き</option>
-                    <option value="square">直角</option>
-                    <option value="superellipse">数値指定</option>
+                  <span class="mm-style-label" data-i18n="panel.item.style.cornerShort">角の形</span>
+                  <select class="mm-select mm-style-corner" data-i18n-aria-label="common.cornerShape" data-i18n-title="panel.item.style.cornerTitle" aria-label="角の形式" title="角の形式（CSS corner-shape）">
+                    <option value="round" data-i18n="common.corner.round">標準</option>
+                    <option value="squircle" data-i18n="common.corner.squircle">なめらか</option>
+                    <option value="bevel" data-i18n="common.corner.bevel">面取り</option>
+                    <option value="scoop" data-i18n="common.corner.scoop">えぐり</option>
+                    <option value="notch" data-i18n="common.corner.notch">切り欠き</option>
+                    <option value="square" data-i18n="common.corner.square">直角</option>
+                    <option value="superellipse" data-i18n="common.corner.superellipse">数値指定</option>
                   </select>
                 </div>
                 <!-- 数値指定（superellipse）を選んだときだけ出す曲率の行 -->
                 <div class="mm-style-row mm-style-corner-k" hidden>
-                  <span class="mm-style-label">曲率</span>
-                  <input type="range" class="mm-range mm-style-corner-k-range" min="-5" max="5" step="0.1" aria-label="曲率" />
-                  <input type="number" class="mm-num mm-style-corner-k-num" min="-5" max="5" step="0.1" aria-label="曲率(superellipse)" />
+                  <span class="mm-style-label" data-i18n="common.cornerK">曲率</span>
+                  <input type="range" class="mm-range mm-style-corner-k-range" min="-5" max="5" step="0.1" data-i18n-aria-label="common.cornerK" aria-label="曲率" />
+                  <input type="number" class="mm-num mm-style-corner-k-num" min="-5" max="5" step="0.1" data-i18n-aria-label="common.cornerKNum" aria-label="曲率(superellipse)" />
                   <span class="mm-unit">k</span>
                 </div>
                 <div class="mm-style-row">
-                  <label class="mm-style-check" title="このマーカーの連番ラベルの表示/非表示を切り替える">
+                  <label class="mm-style-check" data-i18n-title="panel.item.showLabel.title" title="このマーカーの連番ラベルの表示/非表示を切り替える">
                     <input type="checkbox" class="mm-style-showlabel" />
-                    <span>連番ラベルを表示</span>
+                    <span data-i18n="panel.item.showLabel.label">連番ラベルを表示</span>
                   </label>
                 </div>
               </div>
             </div>
             <!-- スクリーンショット関連の操作を1つの帯にまとめて関連を示す -->
-            <div class="mm-shot-group" role="group" aria-label="スクリーンショット">
+            <div class="mm-shot-group" role="group" data-i18n-aria-label="panel.item.shot.aria" aria-label="スクリーンショット">
               <svg class="mm-shot-group-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                 <circle cx="12" cy="13" r="4" />
               </svg>
-              <label class="mm-shot-incl" title="このマーカーのスクリーンショットにマーカー・連番ラベルを含める">
+              <label class="mm-shot-incl" data-i18n-title="panel.item.shotIncl.title" title="このマーカーのスクリーンショットにマーカー・連番ラベルを含める">
                 <input type="checkbox" class="mm-act-shot-incl" />
-                <span>マーカー込み</span>
+                <span data-i18n="panel.item.shotIncl.label">マーカー込み</span>
               </label>
               <!-- 「保存」「コピー」をくっつけたセグメント表示 -->
               <div class="mm-shot-btns">
-                <button type="button" class="mm-act mm-act-shot">保存</button>
-                <button type="button" class="mm-act mm-act-shot-copy">コピー</button>
+                <button type="button" class="mm-act mm-act-shot" data-i18n="common.save">保存</button>
+                <button type="button" class="mm-act mm-act-shot-copy" data-i18n="common.copy">コピー</button>
               </div>
             </div>
           </div>
         </div>
         <!-- マーカー設定を閉じる（クリア）。ウィンドウの×のように右上へ配置 -->
-        <button type="button" class="mm-item-close" title="このマーカーをクリア" aria-label="このマーカーをクリア">
+        <button type="button" class="mm-item-close" data-i18n-title="panel.item.close.label" data-i18n-aria-label="panel.item.close.label" title="このマーカーをクリア" aria-label="このマーカーをクリア">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <line x1="18" y1="6" x2="6" y2="18" />
             <line x1="6" y1="6" x2="18" y2="18" />
