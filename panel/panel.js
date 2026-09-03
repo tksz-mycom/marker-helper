@@ -1741,6 +1741,7 @@ if (typeof module !== "undefined" && module.exports) {
     moveItem,
     moveItemToEdge,
     updateMoveBoundaries,
+    bootI18n,
     __test: {
       resetReorder: () => reorderCtl.reset(),
     },
