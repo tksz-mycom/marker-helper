@@ -43,8 +43,10 @@ body {
 .mm-head {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding: 14px 16px;
+  /* JA|EN 切替の追加でヘッダーの横幅が窮屈になったため、左右パディングと
+     アイテム間の gap を詰めて収める（幅300px固定・タイトルは省略しない前提）。 */
+  gap: 6px;
+  padding: 14px 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -634,15 +636,18 @@ body {
   display: none;
 }
 
-/* ヘッダー右端の一覧パネル起動ボタン */
+/* ヘッダー右端の一覧パネル起動ボタン。
+   右寄せは JA|EN セグメント（.mm-lang）側の margin-left:auto に一本化するため、
+   ここでは付けない（両方に付けると余白の分配先が2箇所になり意味が不明瞭になるため）。
+   また flex:none で幅を固定し、ヘッダーが窮屈なときに縮んで潰れないようにする。 */
 .mm-head-btn {
   position: relative;
-  margin-left: auto;
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -697,13 +702,15 @@ body {
   visibility: hidden;
 }
 
-/* ヘッダーの JA/EN 切替。既存のセグメントより一段小さくして主操作を邪魔しない。 */
+/* ヘッダーの JA/EN 切替。既存のセグメントより一段小さくして主操作を邪魔しない。
+   ヘッダー右寄せクラスタ（本要素・アイコンボタン群）の先頭として
+   margin-left:auto をここに一本化する。 */
 .mm-lang {
   margin-left: auto;
   flex: none;
 }
 .mm-lang button {
-  padding: 2px 7px;
+  padding: 2px 4px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;

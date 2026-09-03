@@ -84,7 +84,9 @@ body {
 }
 
 .mm-pill {
-  margin-left: auto;
+  /* 右寄せは JA|EN セグメント（.mm-lang）側の margin-left:auto に一本化する。
+     両方に付けると余白がタイトルとの間・件数バッジとの間で二分され、
+     件数バッジだけが浮いて見えるため。 */
   min-width: 22px;
   height: 20px;
   padding: 0 7px;
