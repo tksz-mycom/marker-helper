@@ -128,3 +128,31 @@ describe("動的文言", () => {
     i18n.setLang("ja");
   });
 });
+
+describe("エクスポートの文言", () => {
+  afterEach(() => i18n.setLang("ja"));
+
+  test("列見出しが日英で切り替わる", () => {
+    const cols = (lang) => {
+      i18n.setLang(lang);
+      return ["no", "tag", "group", "css", "xpath", "text", "note"].map((k) => i18n.t(`export.col.${k}`));
+    };
+    expect(cols("ja")).toEqual(["番号", "タグ", "グループ", "CSSセレクタ", "XPath", "テキスト", "メモ"]);
+    expect(cols("en")).toEqual(["No.", "Tag", "Group", "CSS selector", "XPath", "Text", "Note"]);
+  });
+
+  test("生成テストコードの文言に単一引用符が含まれない", () => {
+    // Playwright / Cypress の雛形は '...' の中へ差し込むため、引用符が入ると壊れる
+    for (const lang of ["ja", "en"]) {
+      i18n.setLang(lang);
+      expect(i18n.t("export.testName")).not.toContain("'");
+      expect(i18n.t("export.itName")).not.toContain("'");
+    }
+  });
+
+  test("画像保存のトーストが英語で単複を切り替える", () => {
+    i18n.setLang("en");
+    expect(i18n.t("panel.toast.savedImages", { n: 1 })).toBe("Saved 1 image");
+    expect(i18n.t("panel.toast.savedImages", { n: 4 })).toBe("Saved 4 images");
+  });
+});

@@ -1016,8 +1016,13 @@ function downloadText(text, filename, mime) {
   }
 }
 
-// 一覧の各行に出力する列（CSV / Markdown 共通）
-const EXPORT_COLUMNS = ["番号", "タグ", "グループ", "CSSセレクタ", "XPath", "テキスト", "メモ"];
+// 一覧の各行に出力する列（CSV / Markdown 共通）。
+// 言語切替に追従させるため、定数ではなく参照時に辞書を引く関数にしている。
+function exportColumns() {
+  return ["no", "tag", "group", "css", "xpath", "text", "note"].map((key) =>
+    MMShared.t(`export.col.${key}`),
+  );
+}
 function exportRow(m) {
   return [m.label, m.tag, m.group || "", m.selector, m.xpath || "", m.text || "", m.note || ""];
 }
@@ -1029,7 +1034,7 @@ function csvCell(value) {
 }
 
 function buildCsv(marks) {
-  const lines = [EXPORT_COLUMNS.map(csvCell).join(",")];
+  const lines = [exportColumns().map(csvCell).join(",")];
   for (const m of marks) lines.push(exportRow(m).map(csvCell).join(","));
   // Excel での文字化け回避のため BOM を先頭に付ける
   return `﻿${lines.join("\r\n")}\r\n`;
@@ -1041,8 +1046,9 @@ function mdCell(value) {
 }
 
 function buildMarkdown(marks) {
-  const head = `| ${EXPORT_COLUMNS.join(" | ")} |`;
-  const sep = `| ${EXPORT_COLUMNS.map(() => "---").join(" | ")} |`;
+  const columns = exportColumns();
+  const head = `| ${columns.join(" | ")} |`;
+  const sep = `| ${columns.map(() => "---").join(" | ")} |`;
   const rows = marks.map((m) => `| ${exportRow(m).map(mdCell).join(" | ")} |`);
   return [head, sep, ...rows].join("\n") + "\n";
 }
@@ -1070,7 +1076,11 @@ function locatorSnippet(m) {
 }
 
 function buildPlaywright(marks, url) {
-  const lines = ["import { test, expect } from '@playwright/test';", "", "test('Marker:HELPER でマークした要素', async ({ page }) => {"];
+  const lines = [
+    "import { test, expect } from '@playwright/test';",
+    "",
+    `test('${MMShared.t("export.testName")}', async ({ page }) => {`,
+  ];
   if (url) lines.push(`  await page.goto(${jsString(url)});`);
   for (const m of marks) {
     const label = commentLabel(m);
@@ -1085,9 +1095,12 @@ function buildCypress(marks, url) {
   const lines = [];
   // XPath 出力は cypress-xpath プラグインが前提になるため先頭で明示する
   if (selectorFormat === "xpath") {
-    lines.push("// XPath を使うには cypress-xpath プラグインが必要です（npm i -D cypress-xpath）", "");
+    lines.push(`// ${MMShared.t("export.cypressXpathNote")}`, "");
   }
-  lines.push("describe('Marker:HELPER でマークした要素', () => {", "  it('要素が表示されている', () => {");
+  lines.push(
+    `describe('${MMShared.t("export.testName")}', () => {`,
+    `  it('${MMShared.t("export.itName")}', () => {`,
+  );
   if (url) lines.push(`    cy.visit(${jsString(url)});`);
   for (const m of marks) {
     const label = commentLabel(m);
@@ -1101,16 +1114,16 @@ function buildCypress(marks, url) {
 // 現在のマーク一覧（スタイル込み）を content から取得し、選択形式で保存する。
 async function exportMarks() {
   if (activeTabId == null) {
-    showToast("このページでは利用できません");
+    showToast(MMShared.t("common.unsupported"));
     return;
   }
   if (currentMarks.length === 0) {
-    showToast("エクスポートするマーカーがありません");
+    showToast(MMShared.t("panel.toast.noMarksToExport"));
     return;
   }
   const res = await sendToTab({ type: "MM_EXPORT_MARKS" });
   if (!res || !res.ok) {
-    showToast("エクスポートに失敗しました");
+    showToast(MMShared.t("panel.toast.exportFailed"));
     return;
   }
   const marks = res.marks || [];
@@ -1137,21 +1150,21 @@ async function exportMarks() {
     };
     downloadJson(data, `${base}.json`);
   }
-  showToast(`${marks.length}件のマーカーをエクスポートしました`);
+  showToast(MMShared.t("panel.toast.exported", { n: marks.length }));
 }
 
 // 検証済みのマーク配列を content に渡して復元し、結果をトーストで通知する。
 async function applyImportedMarks(marks) {
   const res = await sendToTab({ type: "MM_IMPORT_MARKS", marks });
   if (!res || !res.ok) {
-    showToast("インポートに失敗しました");
+    showToast(MMShared.t("panel.toast.importFailed"));
     return;
   }
   // 一覧は content からの更新通知で再描画される。ここでは結果だけ通知する
   if (res.skipped > 0) {
-    showToast(`${res.restored}件を復元（${res.skipped}件は対象が見つからず除外）`);
+    showToast(MMShared.t("panel.toast.importedPartial", { n: res.restored, skipped: res.skipped }));
   } else {
-    showToast(`${res.restored}件のマーカーを復元しました`);
+    showToast(MMShared.t("panel.toast.imported", { n: res.restored }));
   }
 }
 
@@ -1159,14 +1172,14 @@ async function applyImportedMarks(marks) {
 // ファイル読込・ドラッグ&ドロップ・クリップボード貼り付けの共通経路。
 function importMarksFromText(text) {
   if (activeTabId == null) {
-    showToast("このページでは利用できません");
+    showToast(MMShared.t("common.unsupported"));
     return;
   }
   let data;
   try {
     data = JSON.parse(text);
   } catch {
-    showToast("読み込みに失敗しました（JSON形式エラー）");
+    showToast(MMShared.t("panel.toast.readFailedJson"));
     return;
   }
   if (
@@ -1176,7 +1189,7 @@ function importMarksFromText(text) {
     data.kind !== MARKS_FILE_KIND ||
     !Array.isArray(data.marks)
   ) {
-    showToast("マーカー一覧のファイルではありません");
+    showToast(MMShared.t("panel.toast.notMarksFile"));
     return;
   }
   applyImportedMarks(data.marks);
@@ -1186,15 +1199,15 @@ function importMarksFromText(text) {
 function importMarksFromFile(file) {
   if (!file) return;
   if (activeTabId == null) {
-    showToast("このページでは利用できません");
+    showToast(MMShared.t("common.unsupported"));
     return;
   }
   if (file.size > MAX_IMPORT_BYTES) {
-    showToast("ファイルが大きすぎます");
+    showToast(MMShared.t("panel.toast.fileTooLarge"));
     return;
   }
   const reader = new FileReader();
-  reader.onerror = () => showToast("ファイルの読み込みに失敗しました");
+  reader.onerror = () => showToast(MMShared.t("panel.toast.fileReadFailed"));
   reader.onload = () => importMarksFromText(String(reader.result));
   reader.readAsText(file);
 }
@@ -1206,7 +1219,7 @@ function loadImage(dataUrl) {
   return new Promise((resolve, reject) => {
     const im = new Image();
     im.onload = () => resolve(im);
-    im.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
+    im.onerror = () => reject(new Error(MMShared.t("panel.error.imageLoad")));
     im.src = dataUrl;
   });
 }
@@ -1216,7 +1229,7 @@ function canvasToBlob(canvas) {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("PNGの生成に失敗しました"));
+      else reject(new Error(MMShared.t("panel.error.pngEncode")));
     }, "image/png");
   });
 }
@@ -1358,10 +1371,10 @@ async function captureMarkBlob(mark, clean, hideIds = excludedMarkIds()) {
 
 // 撮影失敗時の理由に応じたトースト文言
 function captureErrorText(reason) {
-  if (reason === "detached") return "対象が見つかりません（消失したマーカー）";
-  if (reason === "unsupported") return "このページでは利用できません";
-  if (reason === "offscreen") return "対象が画面外のため撮影できません";
-  return "画像の撮影に失敗しました";
+  if (reason === "detached") return MMShared.t("panel.toast.detached");
+  if (reason === "unsupported") return MMShared.t("common.unsupported");
+  if (reason === "offscreen") return MMShared.t("panel.toast.offscreen");
+  return MMShared.t("panel.toast.captureFailed");
 }
 
 // Blob を指定ファイル名でダウンロードする。
@@ -1387,7 +1400,7 @@ async function saveImage(mark, clean) {
     return;
   }
   downloadBlob(res.blob, `marker-helper-shot-${nowStamp()}-${mark.label}.png`);
-  showToast(`#${mark.label} の画像を保存しました`);
+  showToast(MMShared.t("panel.toast.imageSaved", { n: mark.label }));
 }
 
 const delay = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -1396,18 +1409,18 @@ const delay = (ms) => new Promise((r) => setTimeout(r, ms));
 // 各行の「マーカー込み」設定を個別に反映し、写り込む他マークも状態から判定する。
 async function saveAllImages() {
   if (activeTabId == null) {
-    showToast("このページでは利用できません");
+    showToast(MMShared.t("common.unsupported"));
     return;
   }
   const list = currentMarks.filter(matchesFilter);
   if (list.length === 0) {
-    showToast("保存するマーカーがありません");
+    showToast(MMShared.t("panel.toast.noMarksToSave"));
     return;
   }
   const hideIds = hideIdsFromState();
   let ok = 0;
   let fail = 0;
-  showToast(`${list.length}件の画像を保存しています…`);
+  showToast(MMShared.t("panel.toast.savingImages", { n: list.length }));
   for (const mark of list) {
     if (mark.detached) {
       fail++;
@@ -1423,7 +1436,11 @@ async function saveAllImages() {
     // 連続ダウンロードのスロットリング・撮影間の描画安定のため少し待つ
     await delay(300);
   }
-  showToast(fail > 0 ? `${ok}件を保存（${fail}件は失敗/対象なし）` : `${ok}件の画像を保存しました`);
+  showToast(
+    fail > 0
+      ? MMShared.t("panel.toast.savedImagesPartial", { n: ok, fail })
+      : MMShared.t("panel.toast.savedImages", { n: ok }),
+  );
 }
 
 // 対象マークの画像をクリップボードへコピーする。
@@ -1435,9 +1452,9 @@ async function copyImage(mark, clean) {
   }
   try {
     await navigator.clipboard.write([new ClipboardItem({ "image/png": res.blob })]);
-    showToast(`#${mark.label} の画像をコピーしました`);
+    showToast(MMShared.t("panel.toast.imageCopied", { n: mark.label }));
   } catch {
-    showToast("画像のコピーに失敗しました");
+    showToast(MMShared.t("panel.toast.imageCopyFailed"));
   }
 }
 
