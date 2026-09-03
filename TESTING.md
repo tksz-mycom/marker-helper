@@ -32,6 +32,7 @@ PW_HEADLESS=1 xvfb-run -a npm run e2e   # ヘッドレス/CI（要 xvfb）
 - `shared/label.js` … `effectiveShowLabel(mark, global)`（連番の3状態）
 - `shared/reorderController.js` … 並べ替え確定のタイミング制御（`onMove`/`shouldSkipRender`/`reset`）
 - `shared/cornerShape.js` … 角の形式（CSS `corner-shape`）の検証・整形（`sanitizeCornerShape`/`superellipseParam`/`clampCornerK`）
+- `shared/i18n.js` … 日英の文言辞書と適用機構（`t()`/`applyI18n`/`mm:lang` の永続化）
 
 層2では **実際の `panel.html` を jsdom に流し込み、`panel.js` を読み込んで**内部関数を検証する。
 そのため `panel.js` 末尾に**テストシーム**を入れてある: Node(`module` 定義時)では自動起動せず
@@ -47,6 +48,13 @@ PW_HEADLESS=1 xvfb-run -a npm run e2e   # ヘッドレス/CI（要 xvfb）
 | #2 並べ替えが無言で取り消される | `test/reorderController.test.js`（即時commit＋抑止＋再同期）/ `test/panel.dom.test.js`（DOMで抑止確認） | 1 / 2 |
 
 **運用ルール: 今後バグを直すたびに、まず失敗する回帰テストを1本足してから直す。**
+
+## i18n（日英表示切替）のテスト
+
+- `test/i18n.test.js` / `test/i18n.dom.test.js` / `test/i18n.storage.test.js`: 文言辞書と適用機構。**ja と en のキー集合が完全一致すること**が最重要の回帰テスト。
+- `test/i18n.coverage.test.js`: popup / panel の JS に日本語の文字列リテラルが残っていないことの検査。翻訳しない行は `// i18n-ignore` で除外する。
+- `test/popup.i18n.test.js` / `test/panel.i18n.test.js`: 実 HTML を読み込んで英語表示に切り替わることの検証。
+- `test/manifest.i18n.test.js`: `manifest.json` の `__MSG_*__` と `_locales` の整合。
 
 ## E2E（層3）の実行環境について
 

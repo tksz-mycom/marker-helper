@@ -70,6 +70,20 @@ popup / panel は `chrome.tabs.sendMessage` でアクティブタブの content 
 
 **角の形式（CSS `corner-shape`）**。枠の角は `radius`（px）とは別に `cornerShape` を持ち、`border-radius` と組み合わせて角の曲率を変える（**角丸とは独立した設定項目**で、popup では「角丸」の次のセクション）。値はプリセットのキーワード `CORNER_SHAPES`（`round`=標準 / `squircle`=なめらか(Mac風) / `bevel`=面取り / `scoop`=えぐり / `notch`=切り欠き / `square`=直角）に加えて **`superellipse(k)` の数値指定**（k は `CORNER_K_MIN`〜`CORNER_K_MAX`=-5〜5・小数1桁、既定 `CORNER_K_DEFAULT`=2。k は指数そのものではなく2を底とする対数で、大きいほど角ばり負値でえぐれる。0=bevel / 1=round / 2=squircle / infinity=square 相当）を受け付ける。既定は `round`。値の判定・整形（`sanitizeCornerShape` / `superellipseParam` / `clampCornerK`）は **両対応モジュール `shared/cornerShape.js`**（`globalThis.MMShared`／`module.exports`）に集約し、content の `sanitizeStyle`・popup・panel・テストで共有する（content は信頼境界として受信時に必ず通す）。`styleBox` とホバー枠は CSSOM のキャメルケース名が使えない環境に備えて `style.setProperty("corner-shape", ...)` で当てる。**`corner-shape` 未対応のブラウザでは無視され `round` と同じ見た目に劣化する**ため、popup は `CSS.supports("corner-shape","squircle")` で判定して注記（`#mm-corner-hint`）を出す。他のスタイル項目と同様に `sanitizeStyle`・両シリアライズ・`buildMark`/`importMarks` を通し、永続化（`mm:settings`）・自動保存・JSON 入出力でも保持する。UI は popup が「角の形式」カード内のセグメント（`#mm-corner`、3列グリッド＋全幅の「数値指定」）と曲率スライダー（`#mm-corner-k-row`、数値指定のときだけ表示）、panel が歯車の吹き出しのセレクト（`.mm-style-corner`）と曲率行（`.mm-style-corner-k`、同じく数値指定のときだけ表示）。
 
+**日英の表示言語切替**。popup とサイドパネルの UI 文言は日本語（`ja`）と英語（`en`）を切り替えられる。文言辞書と適用機構は**両対応モジュール `shared/i18n.js`**（`globalThis.MMShared`／`module.exports`）に集約し、popup・panel・テストで共有する（`content/content.js` と `background.js` はユーザーに見える文字列を持たないため対象外）。
+
+- **言語の決定**: `chrome.storage.local`（キー `mm:lang`、値 `"ja" | "en"`）に保存値があればそれ、無ければ `detectLang(navigator.language)` の自動判定。**自動判定の結果は保存しない**（ユーザーが切替 UI を押したときに初めて保存し、以後それを優先する）。これは popup / panel 専用の UI 設定で content には関与させない。
+- **切替 UI**: popup と panel の両方のヘッダーに `JA|EN` のセグメント（`#mm-lang`）。`chrome.storage.onChanged` を `watchLang` で監視し、片方の切替にもう片方が追従する。panel は静的文言の再適用に加えて `render(currentMarks)` で行も作り直す。popup はマイカラーを `buildMyPalette()` で描き直す。
+- **静的文言**: HTML に `data-i18n`（`textContent`）・`data-i18n-title`・`data-i18n-aria-label`・`data-i18n-placeholder` を書き、`applyI18n(root)` が当てる。**`innerHTML` は使わない**ため、`data-i18n` は「テキストだけを持つ要素」に付ける（子要素があると消える）。子要素とテキストが混在する箇所（`#mm-unsupported`・`#mm-empty`・`.mm-toggle-text` など）はテキストを `<span>` で包んである。HTML の日本語テキストは既定値として残してある。
+- **動的文言**: `MMShared.t(key, vars)`。`{n}` 形式のプレースホルダを展開し、`vars.n` があって `key.one` が辞書にあるキーだけ単複を分岐する。未定義のキーはキー文字列を返して `console.warn` する。
+- **キー命名**: `common.*`（popup と panel の共通）／`popup.*`／`panel.*`／`export.*`／`report.*` のフラットな文字列キー。
+- **言語切替に追従させる注意点**: 読み込み時に一度だけ評価されるトップレベル定数に文言を置くと切替後も古い言語が残る。`selectorErrorMessage` / `robustLabel` / `robustTitle` / `exportColumns` のように**参照時に辞書を引く関数**にすること。`buildItem` はテンプレート複製の直後に `applyI18n(node)` を呼ぶ。
+- **ちらつき対策**: `<body class="mm-i18n-pending">`（CSS で `visibility: hidden`）を `applyDocumentLang` が外す。`display` ではなく `visibility` なので高さは確保される。例外時に画面が隠れたままにならないよう 1 秒の保険解除も入れてある。
+- **レポート HTML**: 出力する HTML の `lang` 属性と日時の書式（`report.dateLocale` を `toLocaleString` に渡す）も現在の言語に合わせる。
+- **manifest**: 拡張の `description` とショートカット説明のみ `_locales/{ja,en}/messages.json` + `default_locale: "ja"` で多言語化する。**ここだけはブラウザの UI 言語に従い、拡張内のトグルでは変わらない**（Chrome の仕様）。拡張名は固有名のため翻訳しない。
+- **取りこぼしの検出網**: `test/i18n.coverage.test.js` が `popup/popup.js` と `panel/panel.js` に日本語の文字列リテラルが残っていないかを検査する。`content/content.js` は「ユーザーに見える文字列を持たない（日本語はすべてコメント）」という前提で対象外にしてある。**content にユーザー向け文言を足すときは、この検査対象に追加すること。**
+- **文言を追加するときの手順**: (1) `shared/i18n.js` の `MESSAGES.ja` と `MESSAGES.en` の**両方**にキーを足す、(2) 静的文言なら HTML に `data-i18n*` を、動的文言なら `MMShared.t()` を書く、(3) `npm test` で ja/en のキー集合一致テストと日本語残存テストを通す。
+
 ## 重要な実装上の不変条件
 
 - **ページDOMは書き換えない**。枠とバッジはオーバーレイ層（`#mm-overlay-root`, `pointer-events:none`）に描画し、`requestAnimationFrame` のループ（`runLoop`）で対象要素の `getBoundingClientRect()` に追従させる。位置は `transform: translate()` で当てる。
