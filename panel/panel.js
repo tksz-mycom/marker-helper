@@ -1482,13 +1482,13 @@ function escapeHtml(value) {
 // マーク1件分のカード HTML。img は埋め込み用 dataURL（無ければ「画像なし」）。
 function reportCard(mark, img) {
   const group = mark.group ? `<span class="grp">${escapeHtml(mark.group)}</span>` : "";
-  const detached = mark.detached ? `<span class="det">消失</span>` : "";
+  const detached = mark.detached ? `<span class="det">${escapeHtml(MMShared.t("panel.item.detached"))}</span>` : "";
   const note = mark.note ? `<p class="note">${escapeHtml(mark.note)}</p>` : "";
   const text = mark.text ? `<p class="txt">${escapeHtml(mark.text)}</p>` : "";
   const xpath = mark.xpath ? `<dt>XPath</dt><dd><code>${escapeHtml(mark.xpath)}</code></dd>` : "";
   const figure = img
-    ? `<img src="${img}" alt="#${mark.label} のスクリーンショット" />`
-    : `<p class="noimg">画像なし</p>`;
+    ? `<img src="${img}" alt="${escapeHtml(MMShared.t("report.shotAlt", { n: mark.label }))}" />`
+    : `<p class="noimg">${escapeHtml(MMShared.t("report.noImage"))}</p>`;
   return `
     <article class="card">
       <div class="head">
@@ -1512,7 +1512,7 @@ function reportCard(mark, img) {
 function buildReportHtml(items, meta) {
   const cards = items.map(({ mark, img }) => reportCard(mark, img)).join("\n");
   return `<!DOCTYPE html>
-<html lang="ja">
+<html lang="${MMShared.getLang()}">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -1559,8 +1559,8 @@ function buildReportHtml(items, meta) {
   <header class="rpt-head">
     <h1>${escapeHtml(meta.title)}</h1>
     ${meta.url ? `<p class="src">${escapeHtml(meta.url)}</p>` : ""}
-    <p>${escapeHtml(meta.date)} ・ ${items.length}件</p>
-    <button type="button" class="printbtn noprint" onclick="window.print()">印刷 / PDFで保存</button>
+    <p>${escapeHtml(MMShared.t("report.meta", { date: meta.date, n: items.length }))}</p>
+    <button type="button" class="printbtn noprint" onclick="window.print()">${escapeHtml(MMShared.t("report.print"))}</button>
   </header>
   <div class="cards">
 ${cards}
@@ -1572,19 +1572,19 @@ ${cards}
 // 表示中（絞り込み後）の全マーカーを撮影しながら HTML レポートを生成して保存する。
 async function generateReport() {
   if (activeTabId == null) {
-    showToast("このページでは利用できません");
+    showToast(MMShared.t("common.unsupported"));
     return;
   }
   const list = currentMarks.filter(matchesFilter);
   if (list.length === 0) {
-    showToast("レポートにするマーカーがありません");
+    showToast(MMShared.t("panel.toast.noMarksToReport"));
     return;
   }
   // ページURLを取得（撮影前に1回）。全画像保存と同じく状態から hideIds を求める。
   const ex = await sendToTab({ type: "MM_EXPORT_MARKS" });
   const url = (ex && ex.url) || "";
   const hideIds = hideIdsFromState();
-  showToast(`${list.length}件のレポートを作成しています…`);
+  showToast(MMShared.t("panel.toast.buildingReport", { n: list.length }));
   const items = [];
   for (const mark of list) {
     let img = null;
@@ -1602,9 +1602,9 @@ async function generateReport() {
     // 撮影間の描画安定・captureVisibleTab のスロットリング回避
     await delay(200);
   }
-  const meta = { title: "Marker:HELPER レポート", url, date: new Date().toLocaleString("ja-JP") };
+  const meta = { title: MMShared.t("report.title"), url, date: new Date().toLocaleString(MMShared.t("report.dateLocale")) };
   downloadText(buildReportHtml(items, meta), `marker-helper-report-${nowStamp()}.html`, "text/html");
-  showToast(`${items.length}件のレポートを保存しました`);
+  showToast(MMShared.t("panel.toast.reportSaved", { n: items.length }));
 }
 
 const importFileEl = document.getElementById("mm-import-file");

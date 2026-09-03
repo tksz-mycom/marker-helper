@@ -156,3 +156,34 @@ describe("エクスポートの文言", () => {
     expect(i18n.t("panel.toast.savedImages", { n: 4 })).toBe("Saved 4 images");
   });
 });
+
+describe("レポートの文言", () => {
+  afterEach(() => i18n.setLang("ja"));
+
+  test("日英で見出しと印刷ボタンが切り替わる", () => {
+    i18n.setLang("en");
+    expect(i18n.t("report.title")).toBe("Marker:HELPER Report");
+    expect(i18n.t("report.print")).toBe("Print / Save as PDF");
+    i18n.setLang("ja");
+    expect(i18n.t("report.print")).toBe("印刷 / PDFで保存");
+  });
+
+  test("件数付きのメタ行に日付と件数を差し込める", () => {
+    i18n.setLang("en");
+    expect(i18n.t("report.meta", { date: "2026/09/03", n: 2 })).toBe("2026/09/03 · 2 markers");
+    expect(i18n.t("report.meta", { date: "2026/09/03", n: 1 })).toBe("2026/09/03 · 1 marker");
+  });
+
+  test("画像の代替文言がある", () => {
+    i18n.setLang("en");
+    expect(i18n.t("report.shotAlt", { n: 3 })).toBe("Screenshot of #3");
+    expect(i18n.t("report.noImage")).toBe("No image");
+  });
+
+  test("日時のロケール指定が言語に対応する", () => {
+    i18n.setLang("en");
+    expect(i18n.t("report.dateLocale")).toBe("en-US");
+    i18n.setLang("ja");
+    expect(i18n.t("report.dateLocale")).toBe("ja-JP");
+  });
+});
