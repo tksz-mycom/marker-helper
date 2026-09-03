@@ -1076,9 +1076,10 @@ body {
   outline-offset: 1px;
 }
 
-/* JSON ファイルのドラッグ中に出す全面のドロップ案内（取り込み導線の明示） */
+/* JSON ファイルのドラッグ中に出す全面のドロップ案内（取り込み導線の明示）。
+   擬似要素の content は applyI18n が届かないため、JS側で CSS 変数に文言を当てる */
 body.mm-drop-active::after {
-  content: "JSONファイルをドロップして読み込み";
+  content: var(--mm-drop-text, "JSONファイルをドロップして読み込み");
   position: fixed;
   inset: 8px;
   display: flex;

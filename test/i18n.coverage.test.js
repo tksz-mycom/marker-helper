@@ -91,3 +91,13 @@ test("複数行にわたるブロックコメントは読み飛ばし、終了�
   expect(JA.test(code[1])).toBe(false);
   expect(JA.test(code[2])).toBe(true);
 });
+
+// CSSの疑似要素 content: は textContent/setAttribute を見る applyI18n が原理的に届かない。
+// JS/DOMの検査網からも漏れる盲点なので、CSS自体を専用に検査する。
+for (const rel of ["panel/panel.css", "popup/popup.css"]) {
+  test(`${rel} の content: に日本語の文字列が残っていない`, () => {
+    const css = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
+    const hits = [...css.matchAll(/content:\s*(["'])(.*?)\1/g)].map((m) => m[2]).filter((v) => JA.test(v));
+    expect(hits).toEqual([]);
+  });
+}

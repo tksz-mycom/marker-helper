@@ -1634,6 +1634,12 @@ function setDropActive(active) {
   document.body.classList.toggle("mm-drop-active", active);
 }
 
+// ドロップ案内は擬似要素の content に描くため applyI18n が届かない。
+// CSS変数 --mm-drop-text へ現在の言語の文言を当てて追従させる。
+function applyDropHint() {
+  document.body.style.setProperty("--mm-drop-text", JSON.stringify(MMShared.t("panel.drop.hint")));
+}
+
 document.addEventListener("dragenter", (e) => {
   if (!isFileDrag(e)) return;
   e.preventDefault();
@@ -1707,6 +1713,7 @@ chrome.windows?.onFocusChanged?.addListener(async (winId) => {
 async function bootI18n() {
   await MMShared.loadLang();
   MMShared.applyDocumentLang(document);
+  applyDropHint();
   // 言語確定より前に描かれた行（reload()の並走やMM_MARKS_UPDATEDのbroadcast由来）が
   // 古い言語の命令的文言（robustのlabel/title・セレクタのaria-label/title等）のまま
   // 固定されないよう、確定直後に一覧を必ず作り直す。
@@ -1714,6 +1721,7 @@ async function bootI18n() {
   render(currentMarks);
   const rerender = () => {
     MMShared.applyDocumentLang(document);
+    applyDropHint();
     // 言語切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する
     suppressAnimOnce = true;
     render(currentMarks);
