@@ -1,0 +1,14 @@
+{
+  "extDescription": {
+    "message": "Mark any DOM element freely. Markers are drawn on top of elements to help you identify them visually."
+  },
+  "cmdToggleMarking": {
+    "message": "Toggle marking mode"
+  },
+  "cmdJumpNext": {
+    "message": "Scroll to the next marker"
+  },
+  "cmdJumpPrev": {
+    "message": "Scroll to the previous marker"
+  }
+}

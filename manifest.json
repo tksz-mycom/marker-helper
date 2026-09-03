@@ -2,7 +2,8 @@
   "manifest_version": 3,
   "name": "Marker:HELPER",
   "version": "1.1.0",
-  "description": "DOM要素にマーカーを自由に設定できます。マーカーは、要素の上に重ねて表示され、要素を視覚的に識別するのに役立ちます。",
+  "default_locale": "ja",
+  "description": "__MSG_extDescription__",
   "permissions": ["sidePanel", "tabs", "storage", "activeTab"],
   "host_permissions": ["<all_urls>"],
   "action": {
@@ -23,19 +24,19 @@
       "suggested_key": {
         "default": "Alt+Shift+M"
       },
-      "description": "マーキングモードのオン/オフを切り替える"
+      "description": "__MSG_cmdToggleMarking__"
     },
     "jump-next-mark": {
       "suggested_key": {
         "default": "Alt+Shift+Period"
       },
-      "description": "次のマーカーへスクロール"
+      "description": "__MSG_cmdJumpNext__"
     },
     "jump-prev-mark": {
       "suggested_key": {
         "default": "Alt+Shift+Comma"
       },
-      "description": "前のマーカーへスクロール"
+      "description": "__MSG_cmdJumpPrev__"
     }
   },
   "side_panel": {
