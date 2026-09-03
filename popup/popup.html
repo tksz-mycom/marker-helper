@@ -14,14 +14,14 @@
         <button type="button" data-value="ja">JA</button>
         <button type="button" data-value="en">EN</button>
       </div>
-      <button type="button" id="mm-open-window" class="mm-head-btn" title="一覧を別ウィンドウで開く（撮影時にページ幅を保てる）" aria-label="一覧を別ウィンドウで開く">
+      <button type="button" id="mm-open-window" class="mm-head-btn" title="一覧を別ウィンドウで開く（撮影時にページ幅を保てる）" aria-label="一覧を別ウィンドウで開く" data-i18n-title="popup.openWindow.title" data-i18n-aria-label="popup.openWindow.aria">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M15 3h6v6" />
           <path d="M10 14 21 3" />
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
         </svg>
       </button>
-      <button type="button" id="mm-open-panel" class="mm-head-btn" title="一覧パネルを開く" aria-label="一覧パネルを開く">
+      <button type="button" id="mm-open-panel" class="mm-head-btn" title="一覧パネルを開く" aria-label="一覧パネルを開く" data-i18n-title="popup.openPanel.label" data-i18n-aria-label="popup.openPanel.label">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <rect x="3" y="4" width="18" height="16" rx="2" />
           <line x1="15" y1="4" x2="15" y2="20" />
@@ -32,15 +32,16 @@
 
     <!-- 対応していないページ用の注意書き -->
     <p id="mm-unsupported" class="mm-unsupported" hidden>
-      このページでは利用できません。<br />通常のWebページ（http / https）で開いてください。
+      <span data-i18n="popup.unsupported.line1">このページでは利用できません。</span><br />
+      <span data-i18n="popup.unsupported.line2">通常のWebページ（http / https）で開いてください。</span>
     </p>
 
     <main id="mm-main">
       <!-- マーキングモード -->
       <label class="mm-toggle">
         <span class="mm-toggle-text">
-          <strong>マーキングモード</strong>
-          <small>ホバーで強調・クリックで固定</small>
+          <strong data-i18n="common.markingMode.title">マーキングモード</strong>
+          <small data-i18n="common.markingMode.desc">ホバーで強調・クリックで固定</small>
         </span>
         <input type="checkbox" id="mm-enabled" />
         <span class="mm-switch" aria-hidden="true"></span>
@@ -48,11 +49,11 @@
 
       <!-- 色 -->
       <section class="mm-field">
-        <h2>マーカーの色</h2>
-        <div class="mm-swatches" id="mm-swatches" role="radiogroup" aria-label="マーカーの色"></div>
+        <h2 data-i18n="popup.color.heading">マーカーの色</h2>
+        <div class="mm-swatches" id="mm-swatches" role="radiogroup" aria-label="マーカーの色" data-i18n-aria-label="popup.color.heading"></div>
 
-        <h3 class="mm-subhead">マーカーの色（マイカラー）</h3>
-        <div class="mm-mypalette" id="mm-mypalette" aria-label="マイカラー（自分で登録した色）"></div>
+        <h3 class="mm-subhead" data-i18n="popup.color.myHeading">マーカーの色（マイカラー）</h3>
+        <div class="mm-mypalette" id="mm-mypalette" aria-label="マイカラー（自分で登録した色）" data-i18n-aria-label="popup.color.myAria"></div>
 
         <!-- マイカラーの新規追加・色変更に使う隠しカラーピッカー -->
         <input type="color" id="mm-add-color" class="mm-visually-hidden" tabindex="-1" aria-hidden="true" value="#ff3b30" />
@@ -62,42 +63,42 @@
       <div class="mm-preview" aria-hidden="true">
         <span id="mm-preview-box">
           <span id="mm-preview-badge" class="mm-preview-badge">1</span>
-          プレビュー
+          <span data-i18n="popup.preview.label">プレビュー</span>
         </span>
       </div>
 
       <!-- 表示オプション -->
       <section class="mm-field">
-        <h2>表示</h2>
+        <h2 data-i18n="popup.display.heading">表示</h2>
         <div class="mm-label-card">
           <label class="mm-inline-toggle">
             <span class="mm-inline-text">
-              連番ラベル
-              <small>枠に番号バッジを表示</small>
+              <span data-i18n="popup.labels.title">連番ラベル</span>
+              <small data-i18n="popup.labels.desc">枠に番号バッジを表示</small>
             </span>
             <input type="checkbox" id="mm-labels" />
             <span class="mm-switch" aria-hidden="true"></span>
           </label>
-          <div class="mm-segmented mm-label-pos" id="mm-label-pos" role="radiogroup" aria-label="ラベル位置">
-            <button type="button" data-value="tl" class="is-active" title="左上" aria-label="左上" disabled>
+          <div class="mm-segmented mm-label-pos" id="mm-label-pos" role="radiogroup" aria-label="ラベル位置" data-i18n-aria-label="popup.labelPos.aria">
+            <button type="button" data-value="tl" class="is-active" title="左上" aria-label="左上" data-i18n-title="common.pos.tl" data-i18n-aria-label="common.pos.tl" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
                 <circle cx="7" cy="8" r="2.6" fill="currentColor" />
               </svg>
             </button>
-            <button type="button" data-value="tr" title="右上" aria-label="右上" disabled>
+            <button type="button" data-value="tr" title="右上" aria-label="右上" data-i18n-title="common.pos.tr" data-i18n-aria-label="common.pos.tr" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
                 <circle cx="17" cy="8" r="2.6" fill="currentColor" />
               </svg>
             </button>
-            <button type="button" data-value="bl" title="左下" aria-label="左下" disabled>
+            <button type="button" data-value="bl" title="左下" aria-label="左下" data-i18n-title="common.pos.bl" data-i18n-aria-label="common.pos.bl" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
                 <circle cx="7" cy="16" r="2.6" fill="currentColor" />
               </svg>
             </button>
-            <button type="button" data-value="br" title="右下" aria-label="右下" disabled>
+            <button type="button" data-value="br" title="右下" aria-label="右下" data-i18n-title="common.pos.br" data-i18n-aria-label="common.pos.br" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2" />
                 <circle cx="17" cy="16" r="2.6" fill="currentColor" />
@@ -109,36 +110,36 @@
 
       <!-- 透明度 -->
       <section class="mm-field">
-        <h2>透明度</h2>
+        <h2 data-i18n="common.transparency">透明度</h2>
         <div class="mm-slider-row">
-          <input type="range" id="mm-transparency" class="mm-range" min="0" max="100" step="1" value="0" aria-label="透明度" />
-          <input type="number" id="mm-transparency-num" class="mm-num" min="0" max="100" step="1" value="0" aria-label="透明度(%)" />
+          <input type="range" id="mm-transparency" class="mm-range" min="0" max="100" step="1" value="0" aria-label="透明度" data-i18n-aria-label="common.transparency" />
+          <input type="number" id="mm-transparency-num" class="mm-num" min="0" max="100" step="1" value="0" aria-label="透明度(%)" data-i18n-aria-label="common.transparencyPct" />
           <span class="mm-unit">%</span>
         </div>
       </section>
 
       <!-- 線種 -->
       <section class="mm-field">
-        <h2>線種</h2>
-        <div class="mm-segmented" id="mm-line" role="radiogroup" aria-label="線種">
-          <button type="button" data-value="solid" class="is-active">実線</button>
-          <button type="button" data-value="dashed">破線</button>
-          <button type="button" data-value="dotted">点線</button>
+        <h2 data-i18n="common.lineStyle">線種</h2>
+        <div class="mm-segmented" id="mm-line" role="radiogroup" aria-label="線種" data-i18n-aria-label="common.lineStyle">
+          <button type="button" data-value="solid" class="is-active" data-i18n="common.line.solid">実線</button>
+          <button type="button" data-value="dashed" data-i18n="common.line.dashed">破線</button>
+          <button type="button" data-value="dotted" data-i18n="common.line.dotted">点線</button>
         </div>
       </section>
 
       <!-- 線幅（細/中/太のプリセットとスライダーを1枚のカードにまとめる） -->
       <section class="mm-field">
-        <h2>線幅</h2>
+        <h2 data-i18n="common.lineWidth">線幅</h2>
         <div class="mm-width-card">
-          <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅">
-            <button type="button" data-value="2">細</button>
-            <button type="button" data-value="4" class="is-active">中</button>
-            <button type="button" data-value="6">太</button>
+          <div class="mm-segmented" id="mm-width" role="radiogroup" aria-label="線幅" data-i18n-aria-label="common.lineWidth">
+            <button type="button" data-value="2" data-i18n="popup.width.thin">細</button>
+            <button type="button" data-value="4" class="is-active" data-i18n="popup.width.medium">中</button>
+            <button type="button" data-value="6" data-i18n="popup.width.thick">太</button>
           </div>
           <div class="mm-slider-row">
-            <input type="range" id="mm-width-range" class="mm-range" min="1" max="20" step="1" value="4" aria-label="線幅" />
-            <input type="number" id="mm-width-num" class="mm-num" min="1" max="20" step="1" value="4" aria-label="線幅(px)" />
+            <input type="range" id="mm-width-range" class="mm-range" min="1" max="20" step="1" value="4" aria-label="線幅" data-i18n-aria-label="common.lineWidth" />
+            <input type="number" id="mm-width-num" class="mm-num" min="1" max="20" step="1" value="4" aria-label="線幅(px)" data-i18n-aria-label="common.lineWidthPx" />
             <span class="mm-unit">px</span>
           </div>
         </div>
@@ -146,43 +147,43 @@
 
       <!-- 余白（4pxの倍数） -->
       <section class="mm-field">
-        <h2>余白</h2>
+        <h2 data-i18n="common.padding">余白</h2>
         <div class="mm-slider-row">
-          <input type="range" id="mm-padding" class="mm-range" min="0" max="40" step="1" value="8" aria-label="余白" />
-          <input type="number" id="mm-padding-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="余白(px)" />
+          <input type="range" id="mm-padding" class="mm-range" min="0" max="40" step="1" value="8" aria-label="余白" data-i18n-aria-label="common.padding" />
+          <input type="number" id="mm-padding-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="余白(px)" data-i18n-aria-label="common.paddingPx" />
           <span class="mm-unit">px</span>
         </div>
       </section>
 
       <!-- 角丸（4pxの倍数） -->
       <section class="mm-field">
-        <h2>角丸</h2>
+        <h2 data-i18n="common.radius">角丸</h2>
         <div class="mm-slider-row">
-          <input type="range" id="mm-radius" class="mm-range" min="0" max="40" step="1" value="8" aria-label="角丸" />
-          <input type="number" id="mm-radius-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="角丸(px)" />
+          <input type="range" id="mm-radius" class="mm-range" min="0" max="40" step="1" value="8" aria-label="角丸" data-i18n-aria-label="common.radius" />
+          <input type="number" id="mm-radius-num" class="mm-num" min="0" max="40" step="1" value="8" aria-label="角丸(px)" data-i18n-aria-label="common.radiusPx" />
           <span class="mm-unit">px</span>
         </div>
       </section>
 
       <!-- 角の形式（CSS corner-shape。角丸の曲率を切り替える） -->
       <section class="mm-field">
-        <h2>角の形式</h2>
+        <h2 data-i18n="common.cornerShape">角の形式</h2>
         <div class="mm-corner-card">
-          <div class="mm-segmented mm-segmented-grid" id="mm-corner" role="radiogroup" aria-label="角の形式">
-            <button type="button" data-value="round" class="is-active" title="round: 通常の円弧の角丸">標準</button>
-            <button type="button" data-value="squircle" title="squircle: Mac風のなめらかな角">なめらか</button>
-            <button type="button" data-value="bevel" title="bevel: 直線で切り落とした角">面取り</button>
-            <button type="button" data-value="scoop" title="scoop: 内側にえぐった角">えぐり</button>
-            <button type="button" data-value="notch" title="notch: 四角く切り欠いた角">切り欠き</button>
-            <button type="button" data-value="square" title="square: 角丸なし（直角）">直角</button>
-            <button type="button" data-value="superellipse" class="mm-corner-wide" title="superellipse(k): 曲率を数値で指定（0=面取り, 1=標準, 2=なめらか）">数値指定</button>
+          <div class="mm-segmented mm-segmented-grid" id="mm-corner" role="radiogroup" aria-label="角の形式" data-i18n-aria-label="common.cornerShape">
+            <button type="button" data-value="round" class="is-active" title="round: 通常の円弧の角丸" data-i18n="common.corner.round" data-i18n-title="popup.corner.round.title">標準</button>
+            <button type="button" data-value="squircle" title="squircle: Mac風のなめらかな角" data-i18n="common.corner.squircle" data-i18n-title="popup.corner.squircle.title">なめらか</button>
+            <button type="button" data-value="bevel" title="bevel: 直線で切り落とした角" data-i18n="common.corner.bevel" data-i18n-title="popup.corner.bevel.title">面取り</button>
+            <button type="button" data-value="scoop" title="scoop: 内側にえぐった角" data-i18n="common.corner.scoop" data-i18n-title="popup.corner.scoop.title">えぐり</button>
+            <button type="button" data-value="notch" title="notch: 四角く切り欠いた角" data-i18n="common.corner.notch" data-i18n-title="popup.corner.notch.title">切り欠き</button>
+            <button type="button" data-value="square" title="square: 角丸なし（直角）" data-i18n="common.corner.square" data-i18n-title="popup.corner.square.title">直角</button>
+            <button type="button" data-value="superellipse" class="mm-corner-wide" title="superellipse(k): 曲率を数値で指定（0=面取り, 1=標準, 2=なめらか）" data-i18n="common.corner.superellipse" data-i18n-title="popup.corner.superellipse.title">数値指定</button>
           </div>
           <div class="mm-slider-row" id="mm-corner-k-row" hidden>
-            <input type="range" id="mm-corner-k" class="mm-range" min="-5" max="5" step="0.1" value="2" aria-label="曲率" />
-            <input type="number" id="mm-corner-k-num" class="mm-num" min="-5" max="5" step="0.1" value="2" aria-label="曲率(superellipse)" />
+            <input type="range" id="mm-corner-k" class="mm-range" min="-5" max="5" step="0.1" value="2" aria-label="曲率" data-i18n-aria-label="common.cornerK" />
+            <input type="number" id="mm-corner-k-num" class="mm-num" min="-5" max="5" step="0.1" value="2" aria-label="曲率(superellipse)" data-i18n-aria-label="common.cornerKNum" />
             <span class="mm-unit">k</span>
           </div>
-          <p class="mm-corner-hint" id="mm-corner-hint" hidden>
+          <p class="mm-corner-hint" id="mm-corner-hint" hidden data-i18n="popup.corner.hint">
             このブラウザは角の形式に未対応のため「標準」で表示されます
           </p>
         </div>
