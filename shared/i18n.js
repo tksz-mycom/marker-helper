@@ -416,6 +416,10 @@
 
   // 辞書・言語・キー・変数から文言を組み立てる純粋関数。
   // 現在言語に依存しないのでテストしやすく、t() はこれに現在言語を渡すだけの薄い包み。
+  // 注意: vars.n は「件数」専用の単複分岐フラグとして扱う。マーカー番号を渡す
+  // キー（panel.toast.copiedContent / selectorApplied / copiedSelector / imageSaved /
+  // imageCopied / report.shotAlt）は {n} をこの引数で埋めているが件数ではないため、
+  // これらのキーに ".one" を足すと「マーカー #1 だけ別文言になる」バグになる。足さないこと。
   function translate(messages, lang, key, vars) {
     const table = (messages && messages[lang]) || {};
     let lookup = key;
