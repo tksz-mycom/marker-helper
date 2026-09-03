@@ -1707,6 +1707,11 @@ chrome.windows?.onFocusChanged?.addListener(async (winId) => {
 async function bootI18n() {
   await MMShared.loadLang();
   MMShared.applyDocumentLang(document);
+  // 言語確定より前に描かれた行（reload()の並走やMM_MARKS_UPDATEDのbroadcast由来）が
+  // 古い言語の命令的文言（robustのlabel/title・セレクタのaria-label/title等）のまま
+  // 固定されないよう、確定直後に一覧を必ず作り直す。
+  suppressAnimOnce = true;
+  render(currentMarks);
   const rerender = () => {
     MMShared.applyDocumentLang(document);
     // 言語切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する
