@@ -88,7 +88,88 @@
     }
   }
 
-  const api = { MESSAGES, normalizeLang, detectLang, translate, setLang, getLang, t, applyI18n };
+  // ---- 言語の永続化 ----------------------------------------------------
+  // popup / panel 専用の UI 設定として chrome.storage.local に保存する
+  // （マイカラーやスクショ既定値と同じ扱いで、content には関与させない）。
+  const LANG_KEY = "mm:lang";
+
+  // 保存値があればそれを、無ければブラウザ言語からの自動判定を使う。
+  // 自動判定の結果は保存しない（ユーザーが切替 UI を押したときに初めて保存し、以後それを優先する）。
+  function loadLang() {
+    const auto = () => detectLang(typeof navigator !== "undefined" ? navigator.language : "");
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.local.get(LANG_KEY, (data) => {
+          void chrome.runtime.lastError;
+          setLang(normalizeLang(data && data[LANG_KEY]) || auto());
+          resolve(getLang());
+        });
+      } catch {
+        setLang(auto());
+        resolve(getLang());
+      }
+    });
+  }
+
+  function saveLang(lang) {
+    setLang(lang);
+    try {
+      chrome.storage.local.set({ [LANG_KEY]: getLang() });
+    } catch {
+      /* storage 権限が無い等は無視 */
+    }
+  }
+
+  // 他コンテキスト（popup ↔ panel）での切替に追従する。
+  function watchLang(onChange) {
+    try {
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area !== "local" || !changes || !changes[LANG_KEY]) return;
+        const next = normalizeLang(changes[LANG_KEY].newValue);
+        if (!next || next === getLang()) return;
+        setLang(next);
+        onChange && onChange(next);
+      });
+    } catch {
+      /* onChanged が無い環境では追従しない */
+    }
+  }
+
+  // 文書全体へ現在言語を反映する。ちらつき防止クラスもここで外す。
+  function applyDocumentLang(doc) {
+    const d = doc || document;
+    d.documentElement.lang = getLang();
+    applyI18n(d);
+    d.body && d.body.classList.remove("mm-i18n-pending");
+  }
+
+  // JA/EN セグメントの配線。押下で保存し、返り値で選択状態を後から再反映できる。
+  function wireLangToggle(container, onChange) {
+    const reflect = () => {
+      for (const btn of container.children) {
+        btn.classList.toggle("is-active", btn.dataset.value === getLang());
+      }
+    };
+    container.addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-value]");
+      if (!btn || !normalizeLang(btn.dataset.value) || btn.dataset.value === getLang()) return;
+      saveLang(btn.dataset.value);
+      reflect();
+      onChange && onChange(getLang());
+    });
+    reflect();
+    return reflect;
+  }
+
+  // 保険: JS 側で例外が起きても画面が隠れたままにならないよう必ず解除する。
+  if (typeof document !== "undefined") {
+    setTimeout(() => document.body && document.body.classList.remove("mm-i18n-pending"), 1000);
+  }
+
+  const api = {
+    MESSAGES, normalizeLang, detectLang, translate, setLang, getLang, t, applyI18n,
+    LANG_KEY, loadLang, saveLang, watchLang, applyDocumentLang, wireLangToggle,
+  };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else (root.MMShared = root.MMShared || {}), Object.assign(root.MMShared, api);
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -33,6 +33,7 @@ function evt() {
 // globalThis.chrome を組み立てて返す。emitMessage で onMessage ハンドラへ流し込める。
 function installChromeMock() {
   const onMessage = evt();
+  const onChanged = evt();
   globalThis.chrome = {
     runtime: {
       sendMessage: () => {},
@@ -53,7 +54,11 @@ function installChromeMock() {
       onUpdated: { addListener: () => {} },
       captureVisibleTab: () => Promise.resolve(""),
     },
-    storage: { local: memStore(), session: memStore() },
+    storage: {
+      local: memStore(),
+      session: memStore(),
+      onChanged: { addListener: onChanged.addListener },
+    },
     windows: {
       onFocusChanged: { addListener: () => {} },
       WINDOW_ID_NONE: -1,
@@ -61,7 +66,10 @@ function installChromeMock() {
       getLastFocused: () => Promise.resolve({ id: 1 }),
     },
   };
-  return { emitMessage: (msg, sender) => onMessage.emit(msg, sender || {}, () => {}) };
+  return {
+    emitMessage: (msg, sender) => onMessage.emit(msg, sender || {}, () => {}),
+    emitStorageChange: (changes, area) => onChanged.emit(changes, area || "local"),
+  };
 }
 
 module.exports = { installChromeMock };
