@@ -2,54 +2,16 @@
 //
 // 層2: 実際の panel.html を jsdom に流し込み、panel.js の内部関数を直接呼んで
 // render の描画順・連番・並べ替え・端ボタンの無効化・並べ替え中の再描画抑止(#2)を検証する。
-const fs = require("fs");
-const path = require("path");
-const { installChromeMock } = require("./helpers/chromeMock.js");
+const { makeMark: mark, bootPanelDom } = require("./helpers/panelFixture.js");
 
 let panel, listEl;
 
 const order = () => [...listEl.querySelectorAll(".mm-item")].map((li) => Number(li.dataset.id));
 const badges = () => [...listEl.querySelectorAll(".mm-item .mm-badge")].map((b) => b.textContent);
 
-function mark(id, over) {
-  return Object.assign(
-    {
-      id,
-      label: id,
-      selector: `#e${id}`,
-      xpath: `//*[@id="e${id}"]`,
-      tag: "div",
-      text: `t${id}`,
-      note: "",
-      group: "",
-      color: "#ff0000",
-      lineStyle: "solid",
-      width: 2,
-      padding: 2,
-      radius: 4,
-      cornerShape: "round",
-      transparency: 0,
-      showLabel: null,
-      detached: false,
-    },
-    over || {},
-  );
-}
-
 beforeAll(() => {
-  // 実 panel.html を読み込み、要素とテンプレートを用意する
-  const html = fs.readFileSync(path.join(__dirname, "../panel/panel.html"), "utf8");
-  const inner = html.replace(/<!doctype[^>]*>/i, "").replace(/<\/?html[^>]*>/gi, "");
-  document.documentElement.innerHTML = inner;
-  // content/panel と同じ前提で chrome と MMShared をグローバルに用意
-  installChromeMock();
-  globalThis.MMShared = Object.assign(
-    {},
-    require("../shared/label.js"),
-    require("../shared/reorderController.js"),
-    require("../shared/cornerShape.js"),
-    require("../shared/i18n.js"),
-  );
+  // 実 panel.html と chrome / MMShared のグローバルを用意する
+  bootPanelDom();
   // panel.js を読み込む（module.exports 経由で内部関数取得、bootstrap は走らない）
   panel = require("../panel/panel.js");
   listEl = document.getElementById("mm-list");

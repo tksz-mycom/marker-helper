@@ -6,49 +6,11 @@
 // truthy でテストシームの bootstrap 分岐が走らないことを逆手に取り、
 // bootI18n をテストシームで直接呼び出して配線そのものを叩く
 // （render/i18n を個別に叩くだけでは bootI18n の配線自体は検証できないため）。
-const fs = require("fs");
-const path = require("path");
-const { installChromeMock } = require("./helpers/chromeMock.js");
-
-function mark(id, over) {
-  return Object.assign(
-    {
-      id,
-      label: id,
-      selector: `#e${id}`,
-      xpath: `//*[@id="e${id}"]`,
-      tag: "div",
-      text: `t${id}`,
-      note: "",
-      group: "",
-      color: "#ff0000",
-      lineStyle: "solid",
-      width: 2,
-      padding: 2,
-      radius: 4,
-      cornerShape: "round",
-      transparency: 0,
-      showLabel: null,
-      detached: false,
-    },
-    over || {},
-  );
-}
+const { makeMark: mark, bootPanelDom } = require("./helpers/panelFixture.js");
 
 test("storage.local.get の解決が遅れても、確定直後の再描画で英語になる", async () => {
   // 実 panel.html を jsdom に流し込み、panel.dom.test.js と同じ前提を用意する
-  const html = fs.readFileSync(path.join(__dirname, "../panel/panel.html"), "utf8");
-  const inner = html.replace(/<!doctype[^>]*>/i, "").replace(/<\/?html[^>]*>/gi, "");
-  document.documentElement.innerHTML = inner;
-
-  installChromeMock();
-  globalThis.MMShared = Object.assign(
-    {},
-    require("../shared/label.js"),
-    require("../shared/reorderController.js"),
-    require("../shared/cornerShape.js"),
-    require("../shared/i18n.js"),
-  );
+  bootPanelDom();
 
   // mm:lang=en を保存済みにしつつ、get の解決だけを意図的に遅らせる
   // （実運用での再現条件: storage.get が tabs.query/sendMessage より遅い）

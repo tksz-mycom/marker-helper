@@ -91,34 +91,8 @@ describe("英語表示", () => {
   });
 });
 
-// 行ではなく DOM で見る。要素と文言が別の行に分かれていても正しく判定できる。
-const JA_TEXT = /[぀-ヿ㐀-鿿]/;
-const I18N_ATTRS = [
-  ["title", "data-i18n-title"],
-  ["aria-label", "data-i18n-aria-label"],
-  ["placeholder", "data-i18n-placeholder"],
-];
-
-function untranslated(scope) {
-  const bad = [];
-  for (const el of scope.querySelectorAll("*")) {
-    // 自分が直接持つテキストノードだけを見る（子要素のテキストはその子で判定する）
-    const own = [...el.childNodes]
-      .filter((n) => n.nodeType === 3)
-      .map((n) => n.textContent)
-      .join("");
-    if (JA_TEXT.test(own) && !el.hasAttribute("data-i18n")) {
-      bad.push(`text: ${el.outerHTML.slice(0, 100)}`);
-    }
-    for (const [attr, marker] of I18N_ATTRS) {
-      const value = el.getAttribute(attr);
-      if (value && JA_TEXT.test(value) && !el.hasAttribute(marker)) {
-        bad.push(`${attr}: ${el.outerHTML.slice(0, 100)}`);
-      }
-    }
-  }
-  return bad;
-}
+// data-i18n の付け忘れ検出は test/helpers/i18nAudit.js に集約している。
+const { untranslated } = require("./helpers/i18nAudit.js");
 
 test("popup.html に data-i18n の無い日本語テキスト・属性が残っていない", () => {
   expect(untranslated(document)).toEqual([]);
