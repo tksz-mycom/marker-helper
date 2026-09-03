@@ -80,6 +80,27 @@
     }
   }
 
+  // スライダーは input イベントで連続送信されるため、ドラッグ中に毎回ディスクへ
+  // 書き込まないよう自動保存と同じく debounce する（最終値だけ保存できればよい）。
+  // 連続送信されない離散な切替（ラベル表示・バッジ位置）は debounce の利点が無く、
+  // 待っている間にページを離れると書き込みが失われるだけなので即時保存する。
+  const SETTINGS_DEBOUNCE_MS = 300;
+  let settingsTimer = null;
+  function schedulePersistSettings() {
+    clearTimeout(settingsTimer);
+    settingsTimer = setTimeout(() => {
+      settingsTimer = null;
+      persistSettings();
+    }, SETTINGS_DEBOUNCE_MS);
+  }
+
+  // 保留中の debounce を取り消して今すぐ書き込む。
+  function flushPersistSettings() {
+    clearTimeout(settingsTimer);
+    settingsTimer = null;
+    persistSettings();
+  }
+
   function restoreSettings() {
     try {
       chrome.storage.local.get(SETTINGS_KEY, (data) => {
@@ -135,7 +156,17 @@
   let autosaveTimer = null;
   function scheduleAutosave() {
     clearTimeout(autosaveTimer);
-    autosaveTimer = setTimeout(saveMarks, AUTOSAVE_DEBOUNCE_MS);
+    autosaveTimer = setTimeout(() => {
+      autosaveTimer = null;
+      saveMarks();
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  // 保留中の debounce を取り消して今すぐ書き込む。
+  function flushAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    saveMarks();
   }
 
   // 再注入（リロード・SPA再評価）時に、同一 URL の保存があれば復元する。
@@ -1034,12 +1065,12 @@
         break;
       case "MM_SET_LABELS":
         setShowLabel(msg.show);
-        persistSettings();
+        flushPersistSettings();
         sendResponse({ ok: true, showLabel: state.showLabel });
         break;
       case "MM_SET_LABEL_POS":
         setLabelPos(msg.pos);
-        persistSettings();
+        flushPersistSettings();
         sendResponse({ ok: true, labelPos: state.labelPos });
         break;
       case "MM_SET_ENABLED":
@@ -1055,7 +1086,7 @@
         if (msg.style) {
           state.style = sanitizeStyle(msg.style, state.style);
         }
-        persistSettings();
+        schedulePersistSettings();
         sendResponse({ ok: true, style: state.style });
         break;
       case "MM_CLEAR_ALL":
@@ -1125,6 +1156,12 @@
     }
     return true; // 非同期応答の可能性に備える
   });
+
+  // debounce の待機中にページを離れると最終値が失われるため、離脱時に書き切る。
+  window.addEventListener("pagehide", () => {
+    if (settingsTimer !== null) flushPersistSettings();
+    if (autosaveTimer !== null) flushAutosave();
+  }, { capture: true });
 
   // 保存済みの設定（スタイル・ラベル表示）を復元する
   restoreSettings();
