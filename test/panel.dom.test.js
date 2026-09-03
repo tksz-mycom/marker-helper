@@ -48,6 +48,7 @@ beforeAll(() => {
     require("../shared/label.js"),
     require("../shared/reorderController.js"),
     require("../shared/cornerShape.js"),
+    require("../shared/i18n.js"),
   );
   // panel.js を読み込む（module.exports 経由で内部関数取得、bootstrap は走らない）
   panel = require("../panel/panel.js");

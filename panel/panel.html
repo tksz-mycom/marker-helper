@@ -6,12 +6,16 @@
     <title>Marker:HELPER — 一覧</title>
     <link rel="stylesheet" href="panel.css" />
   </head>
-  <body>
+  <body class="mm-i18n-pending">
     <header class="mm-bar">
       <div class="mm-bar-title">
         <span class="mm-logo" aria-hidden="true"></span>
         <h1>マーカー</h1>
         <span id="mm-count" class="mm-pill">0</span>
+        <div class="mm-segmented mm-lang" id="mm-lang" role="radiogroup" data-i18n-aria-label="common.language">
+          <button type="button" data-value="ja">JA</button>
+          <button type="button" data-value="en">EN</button>
+        </div>
       </div>
       <!-- マーキングモード（主操作。ポップアップと同じ操作をパネルからも行える） -->
       <label class="mm-toggle">
@@ -282,6 +286,7 @@
     <script src="../shared/label.js"></script>
     <script src="../shared/cornerShape.js"></script>
     <script src="../shared/reorderController.js"></script>
+    <script src="../shared/i18n.js"></script>
     <script src="panel.js"></script>
   </body>
 </html>

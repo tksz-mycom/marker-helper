@@ -1173,3 +1173,20 @@ body.mm-drop-active::after {
   padding: 3px 6px;
   font-size: 11px;
 }
+
+/* 言語が確定するまで一瞬だけ既定文言（日本語）が見えるのを防ぐ。 */
+.mm-i18n-pending {
+  visibility: hidden;
+}
+
+/* ヘッダー右端の JA/EN 切替。件数ピルの右へ寄せる。 */
+.mm-lang {
+  margin-left: auto;
+  flex: none;
+}
+.mm-lang button {
+  padding: 2px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}

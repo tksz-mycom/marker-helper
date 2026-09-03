@@ -12,6 +12,7 @@ const selFormatEl = document.getElementById("mm-selformat");
 const filterEl = document.getElementById("mm-filter");
 const nomatchEl = document.getElementById("mm-nomatch");
 const exportFormatEl = document.getElementById("mm-export-format");
+const langEl = document.getElementById("mm-lang");
 
 let activeTabId = null;
 // 撮影対象タブが属するウィンドウ。captureVisibleTab はこの windowId を明示して呼ぶ。
@@ -1665,6 +1666,24 @@ chrome.windows?.onFocusChanged?.addListener(async (winId) => {
   reload();
 });
 
+// 表示言語を解決して画面へ反映し、切替トグルとポップアップ側の変更追従を配線する。
+// 切替時は静的文言の再適用に加えて、動的生成した一覧の行も作り直す必要がある。
+async function bootI18n() {
+  await MMShared.loadLang();
+  MMShared.applyDocumentLang(document);
+  const rerender = () => {
+    MMShared.applyDocumentLang(document);
+    // 言語切替だけでフェードイン（点滅）が走らないようアニメを1回抑制する
+    suppressAnimOnce = true;
+    render(currentMarks);
+  };
+  const reflect = MMShared.wireLangToggle(langEl, rerender);
+  MMShared.watchLang(() => {
+    rerender();
+    reflect();
+  });
+}
+
 // テスト用フック: Node(jsdom)では自動起動せず内部関数を公開する。
 // ブラウザ実行時(module 未定義)は従来どおりブートストラップする。
 if (typeof module !== "undefined" && module.exports) {
@@ -1678,6 +1697,7 @@ if (typeof module !== "undefined" && module.exports) {
     },
   };
 } else {
+  bootI18n();
   loadShotMarks();
   loadSelectorFormat();
   reload();
